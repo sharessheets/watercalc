@@ -1,12 +1,21 @@
 // Global lookup table: proof (as string) -> PG
-let proofToPg = {};
+let proofToPg = [];
 let logEntries = [];
 
-// Load table & existing log on page load
+// Single string representing the current "user state"
+let activeUserCode = null;
+
+// Allowed codes, managed via admin.html
+let allowedUserCodes = [];
+
+// ---------- INITIALIZATION ----------
+
 window.addEventListener('DOMContentLoaded', () => {
+  // Load proof table
   fetch('proof_table.json')
     .then(res => res.json())
     .then(data => {
+      // data is an object mapping proof string -> PG
       proofToPg = data;
       console.log('Proof table loaded:', Object.keys(proofToPg).length, 'entries');
     })
@@ -25,16 +34,89 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Wire up buttons
+  // Load allowed codes
+  loadAllowedCodes();
+
+  // Load saved user code (if any)
+  activeUserCode = localStorage.getItem('calcUserCode');
+  if (activeUserCode && !isCodeAllowed(activeUserCode)) {
+    // Previously set code is no longer allowed
+    activeUserCode = null;
+    localStorage.removeItem('calcUserCode');
+  }
+  updateUserCodeStatus();
+
+  // Wire up calculator buttons
   document.getElementById('btnCalcTop').addEventListener('click', calculateTop);
   document.getElementById('btnCalcBottom').addEventListener('click', calculateBottom);
   document.getElementById('btnViewLog').addEventListener('click', renderLog);
-  document.getElementById('btnClearLog').addEventListener('click', clearLog);
+  document.getElementById('btnClearLog').addEventListener('click', clearLogForCurrentCode);
+
+  // Wire code button
+  document.getElementById('btnSetUserCode').addEventListener('click', setUserCodeFromInput);
 
   renderLog();
 });
 
+// ---------- USER CODE HANDLING ----------
+
+function loadAllowedCodes() {
+  const raw = localStorage.getItem('allowedUserCodes');
+  if (raw) {
+    try {
+      allowedUserCodes = JSON.parse(raw);
+    } catch {
+      allowedUserCodes = [];
+    }
+  } else {
+    allowedUserCodes = [];
+  }
+}
+
+function isCodeAllowed(code) {
+  return allowedUserCodes.includes(code);
+}
+
+function setUserCodeFromInput() {
+  const input = document.getElementById('userCodeInput');
+  const code = input.value.trim();
+  if (!code) {
+    alert('Enter a code (e.g. bmoore).');
+    return;
+  }
+
+  if (!isCodeAllowed(code)) {
+    alert('Code not allowed. Contact the admin to be added.');
+    return;
+  }
+
+  activeUserCode = code;
+  localStorage.setItem('calcUserCode', activeUserCode);
+  updateUserCodeStatus();
+  renderLog();
+}
+
+function updateUserCodeStatus() {
+  const statusSpan = document.getElementById('userCodeStatus');
+  if (!statusSpan) return;
+
+  if (activeUserCode) {
+    statusSpan.textContent = `Active: ${activeUserCode}`;
+    statusSpan.classList.remove('warning');
+  } else {
+    statusSpan.textContent = '(no active code set)';
+    statusSpan.classList.add('warning');
+  }
+}
+
+// ---------- TOP CALCULATOR (2nd ROUND WATER) ----------
+
 function calculateTop() {
+  if (!activeUserCode) {
+    alert('Set an active code (e.g. bmoore) before calculating.');
+    return;
+  }
+
   const weightStr = document.getElementById('weightTop').value.trim();
   const proofStr = document.getElementById('proofTop').value.trim();
 
@@ -57,7 +139,6 @@ function calculateTop() {
 
   // Truncate to tenths (Excel LEFT(B4,4)*1 behavior)
   const proofTenth = Math.floor(proofVal * 10) / 10;
-  // Normalize key: 80.0 -> "80", 80.1 -> "80.1"
   const proofKey = Number(proofTenth.toFixed(1)).toString();
   const pgConv = proofToPg[proofKey];
 
@@ -86,6 +167,7 @@ function calculateTop() {
   const entry = {
     timestamp: new Date().toISOString(),
     source: 'Top',
+    userCode: activeUserCode,
     weight: weight,
     proof: proofStr,
     pgConvTop: pgConv,
@@ -103,7 +185,14 @@ function calculateTop() {
   alert('Top calculation logged.');
 }
 
+// ---------- BOTTOM CALCULATOR (1st WATER) ----------
+
 function calculateBottom() {
+  if (!activeUserCode) {
+    alert('Set an active code (e.g. bmoore) before calculating.');
+    return;
+  }
+
   const distWeightStr = document.getElementById('distWeight').value.trim();
   const distPfStr = document.getElementById('distPF').value.trim();
 
@@ -124,7 +213,6 @@ function calculateBottom() {
     return;
   }
 
-  // B16 = VLOOKUP(B15, Sheet1!A:C, 3, FALSE)
   const proofKey = Number(distPf.toFixed(1)).toString();
   const pgConv = proofToPg[proofKey];
   if (pgConv === undefined) {
@@ -141,10 +229,10 @@ function calculateBottom() {
   document.getElementById('pgConvBottom').textContent = formatNumber(pgConv, 5);
   document.getElementById('firstH2O').textContent = formatNumber(firstH2O, 3);
 
-  // Log entry (Bottom)
   const entry = {
     timestamp: new Date().toISOString(),
     source: 'Bottom',
+    userCode: activeUserCode,
     weight: null,
     proof: null,
     pgConvTop: null,
@@ -162,24 +250,20 @@ function calculateBottom() {
   alert('Bottom calculation logged.');
 }
 
-// Helpers
-function hasExactDecimals(value, decimals) {
-  if (!value.includes('.')) return false;
-  const parts = value.split('.');
-  return parts.length === 2 && parts[1].length === decimals;
-}
-
-function formatNumber(value, decimals) {
-  return Number(value).toFixed(decimals);
-}
+// ---------- LOG HANDLING ----------
 
 function saveLog() {
   localStorage.setItem('calcLog', JSON.stringify(logEntries));
 }
 
-function clearLog() {
-  if (!confirm('Clear all log entries?')) return;
-  logEntries = [];
+function clearLogForCurrentCode() {
+  if (!activeUserCode) {
+    alert('Set an active code first.');
+    return;
+  }
+  if (!confirm(`Clear all log entries for code "${activeUserCode}"?`)) return;
+
+  logEntries = logEntries.filter(e => e.userCode !== activeUserCode);
   saveLog();
   renderLog();
 }
@@ -191,11 +275,23 @@ function renderLog() {
     return;
   }
 
-  const lines = logEntries.map(entry => {
+  if (!activeUserCode) {
+    out.textContent = '(set an active code to see entries)';
+    return;
+  }
+
+  const visible = logEntries.filter(e => e.userCode === activeUserCode);
+
+  if (!visible.length) {
+    out.textContent = '(no entries yet for this code)';
+    return;
+  }
+
+  const lines = visible.map(entry => {
     const ts = entry.timestamp.replace('T', ' ').split('.')[0];
     if (entry.source === 'Top') {
       return [
-        `[${ts}] TOP`,
+        `[${ts}] TOP (${entry.userCode})`,
         `  Weight: ${entry.weight}`,
         `  Proof: ${entry.proof}`,
         `  PG Conv: ${formatNumber(entry.pgConvTop, 5)}`,
@@ -205,7 +301,7 @@ function renderLog() {
       ].join('\n');
     } else {
       return [
-        `[${ts}] BOTTOM`,
+        `[${ts}] BOTTOM (${entry.userCode})`,
         `  Dist Weight: ${entry.distWeight}`,
         `  Dist PF: ${entry.distPF}`,
         `  PG Conv: ${formatNumber(entry.pgConvBottom, 5)}`,
@@ -216,4 +312,16 @@ function renderLog() {
   });
 
   out.textContent = lines.join('\n');
+}
+
+// ---------- HELPERS ----------
+
+function hasExactDecimals(value, decimals) {
+  if (!value.includes('.')) return false;
+  const parts = value.split('.');
+  return parts.length === 2 && parts[1].length === decimals;
+}
+
+function formatNumber(value, decimals) {
+  return Number(value).toFixed(decimals);
 }
