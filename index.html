@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Proof / Water Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Proof / Water Calculator</h1>
+
+  <section class="calculator">
+    <h2>2nd Round Water Calculation (Top)</h2>
+
+    <label>
+      Weight (B2):
+      <input type="number" id="weightTop" step="0.001" inputmode="decimal">
+    </label>
+
+    <label>
+      Proof (B4) – 3 decimals (e.g. 80.125):
+      <input type="text" id="proofTop" placeholder="80.125">
+    </label>
+
+    <div class="output">
+      <div>PG Conv (B5): <span id="pgConvTop"></span></div>
+      <div>2nd H2O (B6): <span id="secondH2O"></span></div>
+      <div>2nd Weight (B8): <span id="newWeight"></span></div>
+    </div>
+
+    <button id="btnCalcTop">Calculate 2nd Round</button>
+  </section>
+
+  <hr>
+
+  <section class="calculator">
+    <h2>1st Water Calculation (Bottom)</h2>
+
+    <label>
+      Dist Weight (B13):
+      <input type="number" id="distWeight" step="0.001" inputmode="decimal">
+    </label>
+
+    <label>
+      Dist PF (B15) – 1 decimal (e.g. 90.5):
+      <input type="text" id="distPF" placeholder="90.5">
+    </label>
+
+    <div class="output">
+      <div>PG Conv (B16): <span id="pgConvBottom"></span></div>
+      <div>1st H2O (B17): <span id="firstH2O"></span></div>
+    </div>
+
+    <button id="btnCalcBottom">Calculate 1st Water</button>
+  </section>
+
+  <hr>
+
+  <section class="log">
+    <h2>Calculation Log</h2>
+    <button id="btnViewLog">Refresh Log</button>
+    <button id="btnClearLog">Clear Log</button>
+    <pre id="logOutput">(no entries yet)</pre>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
