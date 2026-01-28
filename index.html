@@ -8,6 +8,19 @@
 <body>
   <h1>Proof / Water Calculator</h1>
 
+  <div class="user-bar">
+    <label>
+      Active code (e.g. bmoore):
+      <input type="text" id="userCodeInput" placeholder="Enter code">
+    </label>
+    <button id="btnSetUserCode">Set User</button>
+    <span id="userCodeStatus"></span>
+  </div>
+
+  <p class="small-note">
+    Codes must be pre-approved by admin. Use <code>admin.html</code> (with admin code) to manage allowed codes.
+  </p>
+
   <section class="calculator">
     <h2>2nd Round Water Calculation (Top)</h2>
 
@@ -56,11 +69,15 @@
   <hr>
 
   <section class="log">
-    <h2>Calculation Log</h2>
+    <h2>Calculation Log (current code only)</h2>
     <button id="btnViewLog">Refresh Log</button>
-    <button id="btnClearLog">Clear Log</button>
+    <button id="btnClearLog">Clear Log for This Code</button>
     <pre id="logOutput">(no entries yet)</pre>
   </section>
+
+  <p class="small-note">
+    Admin page: <a href="admin.html">admin.html</a> (requires admin code).
+  </p>
 
   <script src="script.js"></script>
 </body>
