@@ -43,18 +43,22 @@ h1 {
   flex: 1;
   padding: 10px 12px;
   border-radius: 999px;
-  border: 1px solid #ccc;
-  background: #eee;
+  border: 2px solid #555;        /* darker + thicker border */
+  background: #f0f0f0;           /* lighter background */
   cursor: pointer;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;              /* bolder text */
   text-align: center;
+  color: #222;                   /* darker text */
+  letter-spacing: 0.03em;        /* subtle “tab” vibe */
+  text-transform: uppercase;     /* more “tab-like” */
 }
 
 .tab-button.active {
   background: #1976d2;
   color: #fff;
-  border-color: #1976d2;
+  border-color: #0d47a1;         /* darker active border */
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.25); /* halo around active */
 }
 
 /* Cards */
@@ -200,3 +204,4 @@ hr {
     padding: 10px 16px;
   }
 }
+
