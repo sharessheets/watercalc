@@ -1981,20 +1981,26 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initAuthAndApp() {
-  if (typeof createAuth0Client !== 'function') {
-    console.error('Auth0 SPA JS SDK not loaded. Make sure you included it in index.html.');
+  if (
+    typeof auth0 === 'undefined' ||
+    typeof auth0.createAuth0Client !== 'function'
+  ) {
+    console.error(
+      'Auth0 SPA JS SDK not loaded correctly. ' +
+      'Make sure auth0-spa-js.production.js is present and loaded before script.js.'
+    );
     document.body.style.display = 'block';
     return;
   }
 
-  auth0Client = await createAuth0Client({
+  auth0Client = await auth0.createAuth0Client({
     domain: AUTH0_DOMAIN,
     clientId: AUTH0_CLIENT_ID,
     authorizationParams: {
-      // Redirect back to the same URL (GitHub Pages URL)
       redirect_uri: window.location.origin + window.location.pathname
     }
   });
+
 
   // Handle redirect back from Auth0 (after login)
   if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
@@ -2270,3 +2276,4 @@ function hasExactDecimals(value, decimals) {
 function formatNumber(value, decimals) {
   return Number(value).toFixed(decimals);
 }
+
