@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Proof / Water Calculator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Your styles -->
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -75,12 +76,13 @@
     <pre id="logOutput">(no entries yet)</pre>
   </section>
 
-<script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
-  
-  <!-- Your calculator logic -->
+  <!-- Auth0 SPA SDK (MUST be before script.js) -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
+
+  <!-- Your calculator + Auth0 logic -->
   <script src="script.js"></script>
 
-  <!-- Tiny tab logic (no changes needed in script.js) -->
+  <!-- Simple tab logic -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const btnTop = document.getElementById('btnTabTop');
@@ -111,4 +113,3 @@
   </script>
 </body>
 </html>
-
