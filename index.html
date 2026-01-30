@@ -76,46 +76,10 @@
     <pre id="logOutput">(no entries yet)</pre>
   </section>
 
-<!-- Auth0 SPA SDK (MUST be before script.js) -->
-<script src="auth0-spa-js.production.js"></script>
+  <!-- Auth0 SPA SDK (local copy in repo) -->
+  <script src="auth0-spa-js.production.js"></script>
+
   <!-- Your calculator + Auth0 logic -->
   <script src="script.js"></script>
-
-  <!-- Simple tab logic -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const btnTop = document.getElementById('btnTabTop');
-      const btnBottom = document.getElementById('btnTabBottom');
-      const panelTop = document.getElementById('panelTop');
-      const panelBottom = document.getElementById('panelBottom');
-
-      function showTop() {
-        btnTop.classList.add('active');
-        btnBottom.classList.remove('active');
-        panelTop.style.display = 'block';
-        panelBottom.style.display = 'none';
-      }
-
-      function showBottom() {
-        btnBottom.classList.add('active');
-        btnTop.classList.remove('active');
-        panelBottom.style.display = 'block';
-        panelTop.style.display = 'none';
-      }
-
-      btnTop.addEventListener('click', showTop);
-      btnBottom.addEventListener('click', showBottom);
-
-      // Default to top tab visible
-      showTop();
-    });
-  </script>
 </body>
 </html>
-
-
-
-
-
-
-
