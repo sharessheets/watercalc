@@ -1,28 +1,20 @@
 // ========== AUTH0 CONFIG ==========
 //
-// 1) In Auth0 dashboard, copy:
-//    - Domain  (e.g. "your-tenant.us.auth0.com")
-//    - Client ID
-// 2) Make sure these match your tenant.
-
+// These must match your Auth0 tenant & API settings.
 const AUTH0_DOMAIN = 'dev-yncppqxbhx4m1lbd.us.auth0.com';
 const AUTH0_CLIENT_ID = 'Ij2XpgNkCg7FBPXJYA7dCBiaKNO3qi4O';
-// MUST match the API Identifier you create in Auth0 Dashboard → APIs
+// MUST match the API Identifier you created in Auth0 → APIs.
 const AUTH0_AUDIENCE = 'https://proof-calc-api';
 
 // ========== API CONFIG ==========
 //
-// Set this to your Cloudflare Worker URL.
-// Example: "https://proof-calc.yourname.workers.dev"
-// If you’ve bound a custom domain, use that instead.
-
-const API_BASE_URL = 'https://proof-calc-worker.sharessheets.workers.dev'; // <-- TODO: set this
+// Cloudflare Worker URL.
+const API_BASE_URL = 'https://proof-calc-worker.sharessheets.workers.dev';
 
 let auth0Client = null;
-let idToken = null; // cached ID token (if authenticated)
+let idToken = null; // cached Auth0 access token (JWT)
 
 // ========== LOG STATE ==========
-
 let logEntries = [];
 
 // ========== AUTH0 INITIALIZATION ==========
@@ -36,11 +28,10 @@ async function initAuth0() {
   auth0Client = await auth0.createAuth0Client({
     domain: AUTH0_DOMAIN,
     clientId: AUTH0_CLIENT_ID,
-authorizationParams: {
-  redirect_uri: window.location.origin + window.location.pathname,
-  audience: AUTH0_AUDIENCE,
-},
-
+    authorizationParams: {
+      redirect_uri: window.location.origin + window.location.pathname,
+      audience: AUTH0_AUDIENCE,
+    },
     cacheLocation: 'localstorage',
     useRefreshTokens: true,
   });
@@ -67,6 +58,8 @@ async function refreshAuthState() {
   const isAuthenticated = await auth0Client.isAuthenticated();
   const btnLogin = document.getElementById('btnLogin');
   const btnLogout = document.getElementById('btnLogout');
+  const authStatus = document.getElementById('authStatus');
+  const app = document.getElementById('app');
 
   if (isAuthenticated) {
     try {
@@ -78,10 +71,14 @@ async function refreshAuthState() {
 
     if (btnLogin) btnLogin.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'inline-block';
+    if (authStatus) authStatus.textContent = 'Logged in';
+    if (app) app.style.display = 'block';
   } else {
     idToken = null;
     if (btnLogin) btnLogin.style.display = 'inline-block';
     if (btnLogout) btnLogout.style.display = 'none';
+    if (authStatus) authStatus.textContent = 'Not logged in';
+    if (app) app.style.display = 'none';
   }
 }
 
@@ -90,6 +87,7 @@ async function handleLogin() {
   await auth0Client.loginWithRedirect({
     authorizationParams: {
       redirect_uri: window.location.origin + window.location.pathname,
+      audience: AUTH0_AUDIENCE,
     },
   });
 }
@@ -106,7 +104,7 @@ async function handleLogout() {
 // ========== API HELPER ==========
 
 async function callApi(path, payload) {
-  if (!API_BASE_URL || API_BASE_URL.includes('YOUR-WORKER-URL-HERE')) {
+  if (!API_BASE_URL) {
     throw new Error('API_BASE_URL is not configured in script.js');
   }
 
@@ -114,7 +112,7 @@ async function callApi(path, payload) {
     'Content-Type': 'application/json',
   };
 
-  // Attach Auth0 token if we have one (worker can choose to verify or ignore)
+  // Attach Auth0 token if we have one
   if (idToken) {
     headers['Authorization'] = `Bearer ${idToken}`;
   }
@@ -222,7 +220,7 @@ function clearLog() {
 
 // ========== CALCULATOR HANDLERS ==========
 
-// Top: 2nd Round Water (Sheet2 B2, B4, etc.)
+// Top: 2nd Round Water (Sheet2)
 async function handleCalcTop() {
   const weightInput = document.getElementById('weightTop');
   const proofInput = document.getElementById('proofTop');
@@ -250,14 +248,12 @@ async function handleCalcTop() {
   }
 
   try {
-    // Send proof as TEXT (for LEFT()/RIGHT() behavior in worker) and also as "proof"
     const result = await callApi('/calc/top', {
       weight,
       proof: proofStr,
-      proofText: proofStr,
     });
 
-    // Expecting: { ok, pgConv, secondH2O, newWeight }
+    // Worker returns: { ok, pgConv, secondH2O, newWeight }
     pgConvSpan.textContent = String(result.pgConv);
     secondH2OSpan.textContent = String(result.secondH2O);
     newWeightSpan.textContent = String(result.newWeight);
@@ -279,7 +275,7 @@ async function handleCalcTop() {
   }
 }
 
-// Bottom: 1st Water (Sheet2 B13, B15, etc.)
+// Bottom: 1st Water (Sheet2)
 async function handleCalcBottom() {
   const distWeightInput = document.getElementById('distWeight');
   const distPFInput = document.getElementById('distPF');
@@ -317,7 +313,7 @@ async function handleCalcBottom() {
       distPF,
     });
 
-    // Expecting: { ok, pgConv, firstH2O }
+    // Worker returns: { ok, pgConv, firstH2O }
     pgConvSpan.textContent = String(result.pgConv);
     firstH2OSpan.textContent = String(result.firstH2O);
 
@@ -332,9 +328,72 @@ async function handleCalcBottom() {
 
     renderLog();
   } catch (err) {
-  console.error(err);
-  alert(`Bottom calculation failed: ${err.message}`);
+    console.error(err);
+    alert(`Bottom calculation failed: ${err.message}`);
+  }
 }
 
+// ========== INITIALIZATION ==========
 
+function initCalculatorUI() {
+  // Load log from localStorage
+  loadLogFromStorage();
+  renderLog();
 
+  // Wire up buttons
+  const btnCalcTop = document.getElementById('btnCalcTop');
+  const btnCalcBottom = document.getElementById('btnCalcBottom');
+  const btnViewLog = document.getElementById('btnViewLog');
+  const btnClearLog = document.getElementById('btnClearLog');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+
+  if (btnCalcTop) {
+    btnCalcTop.addEventListener('click', () => {
+      handleCalcTop();
+    });
+  }
+
+  if (btnCalcBottom) {
+    btnCalcBottom.addEventListener('click', () => {
+      handleCalcBottom();
+    });
+  }
+
+  if (btnViewLog) {
+    btnViewLog.addEventListener('click', () => {
+      renderLog();
+    });
+  }
+
+  if (btnClearLog) {
+    btnClearLog.addEventListener('click', () => {
+      clearLog();
+    });
+  }
+
+  if (btnLogin) {
+    btnLogin.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleLogin();
+    });
+  }
+
+  if (btnLogout) {
+    btnLogout.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleLogout();
+    });
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await initAuth0();
+  } catch (err) {
+    console.error('Error during Auth0 initialization:', err);
+  }
+
+  initCalculatorUI();
+  await refreshAuthState();
+});
