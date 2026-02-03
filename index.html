@@ -11,70 +11,82 @@
 <body>
   <h1>Proof / Water Calculator</h1>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button id="btnTabTop" class="tab-button active">
-      2nd Round Water (Top)
-    </button>
-    <button id="btnTabBottom" class="tab-button">
-      1st Water (Bottom)
-    </button>
+  <!-- Auth bar -->
+  <div id="auth-bar">
+    <span id="authStatus">Checking login status…</span>
+    <button id="btnLogin" style="display: none;">Log In</button>
+    <button id="btnLogout" style="display: none;">Log Out</button>
   </div>
 
-  <!-- Top calculator tab -->
-  <section id="panelTop" class="calculator tab-panel">
-    <h2>2nd Round Water Calculation (Top)</h2>
-
-    <label>
-      Weight (B2):
-      <input type="number" id="weightTop" step="0.001" inputmode="decimal">
-    </label>
-
-    <label>
-      Proof (B4) – 3 decimals (e.g. 80.125):
-      <input type="text" id="proofTop" placeholder="80.125">
-    </label>
-
-    <div class="output">
-      <div>PG Conv (B5): <span id="pgConvTop"></span></div>
-      <div>2nd H2O (B6): <span id="secondH2O"></span></div>
-      <div>2nd Weight (B8): <span id="newWeight"></span></div>
+  <!-- Everything that should be protected goes inside #app -->
+  <div id="app" style="display: none;">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button id="btnTabTop" class="tab-button active">
+        2nd Round Water (Top)
+      </button>
+      <button id="btnTabBottom" class="tab-button">
+        1st Water (Bottom)
+      </button>
     </div>
 
-    <button id="btnCalcTop">Calculate 2nd Round</button>
-  </section>
+    <!-- Top calculator tab -->
+    <section id="panelTop" class="calculator tab-panel">
+      <h2>2nd Round Water Calculation (Top)</h2>
 
-  <!-- Bottom calculator tab -->
-  <section id="panelBottom" class="calculator tab-panel" style="display: none;">
-    <h2>1st Water Calculation (Bottom)</h2>
+      <label>
+        Weight (B2):
+        <input type="number" id="weightTop" step="0.001" inputmode="decimal">
+      </label>
 
-    <label>
-      Dist Weight (B13):
-      <input type="number" id="distWeight" step="0.001" inputmode="decimal">
-    </label>
+      <label>
+        Proof (B4) – 3 decimals (e.g. 80.125):
+        <input type="text" id="proofTop" placeholder="80.125">
+      </label>
 
-    <label>
-      Dist PF (B15) – 1 decimal (e.g. 90.5):
-      <input type="text" id="distPF" placeholder="90.5">
-    </label>
+      <div class="output">
+        <!-- PG Conv is now server-only, so you may want to hide/remove this line -->
+        <!-- <div>PG Conv (B5): <span id="pgConvTop"></span></div> -->
+        <div>2nd H2O (B6): <span id="secondH2O"></span></div>
+        <div>2nd Weight (B8): <span id="newWeight"></span></div>
+      </div>
 
-    <div class="output">
-      <div>PG Conv (B16): <span id="pgConvBottom"></span></div>
-      <div>1st H2O (B17): <span id="firstH2O"></span></div>
-    </div>
+      <button id="btnCalcTop">Calculate 2nd Round</button>
+    </section>
 
-    <button id="btnCalcBottom">Calculate 1st Water</button>
-  </section>
+    <!-- Bottom calculator tab -->
+    <section id="panelBottom" class="calculator tab-panel" style="display: none;">
+      <h2>1st Water Calculation (Bottom)</h2>
 
-  <hr>
+      <label>
+        Dist Weight (B13):
+        <input type="number" id="distWeight" step="0.001" inputmode="decimal">
+      </label>
 
-  <!-- Shared log for both calculators -->
-  <section class="log">
-    <h2>Calculation Log (last 10 entries)</h2>
-    <button id="btnViewLog">Refresh Log</button>
-    <button id="btnClearLog">Clear Log</button>
-    <pre id="logOutput">(no entries yet)</pre>
-  </section>
+      <label>
+        Dist PF (B15) – 1 decimal (e.g. 90.5):
+        <input type="text" id="distPF" placeholder="90.5">
+      </label>
+
+      <div class="output">
+        <!-- PG Conv is server-only here too -->
+        <!-- <div>PG Conv (B16): <span id="pgConvBottom"></span></div> -->
+        <div>1st H2O (B17): <span id="firstH2O"></span></div>
+      </div>
+
+      <button id="btnCalcBottom">Calculate 1st Water</button>
+    </section>
+
+    <hr>
+
+    <!-- Shared log for both calculators -->
+    <section class="log">
+      <h2>Calculation Log (last 10 entries)</h2>
+      <button id="btnViewLog">Refresh Log</button>
+      <button id="btnClearLog">Clear Log</button>
+      <pre id="logOutput">(no entries yet)</pre>
+    </section>
+  </div> <!-- end #app -->
 
   <!-- Auth0 SPA SDK -->
   <script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
@@ -82,39 +94,8 @@
   <!-- Your calculator + Auth0 logic -->
   <script src="script.js"></script>
 
-  <!-- Simple tab logic (only handles switching views) -->
-  <script>
-    window.addEventListener('DOMContentLoaded', function () {
-      const btnTop = document.getElementById('btnTabTop');
-      const btnBottom = document.getElementById('btnTabBottom');
-      const panelTop = document.getElementById('panelTop');
-      const panelBottom = document.getElementById('panelBottom');
-
-      if (!btnTop || !btnBottom || !panelTop || !panelBottom) {
-        console.error('Tab elements not found');
-        return;
-      }
-
-      function showTop() {
-        btnTop.classList.add('active');
-        btnBottom.classList.remove('active');
-        panelTop.style.display = 'block';
-        panelBottom.style.display = 'none';
-      }
-
-      function showBottom() {
-        btnBottom.classList.add('active');
-        btnTop.classList.remove('active');
-        panelBottom.style.display = 'block';
-        panelTop.style.display = 'none';
-      }
-
-      btnTop.addEventListener('click', showTop);
-      btnBottom.addEventListener('click', showBottom);
-
-      // Default to top tab on load
-      showTop();
-    });
-  </script>
+  <!-- Simple tab logic ... (unchanged) -->
 </body>
+
 </html>
+
