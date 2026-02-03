@@ -332,5 +332,9 @@ async function handleCalcBottom() {
 
     renderLog();
   } catch (err) {
-    console.error(e
+  console.error(err);
+  alert(`Bottom calculation failed: ${err.message}`);
+}
+
+
 
