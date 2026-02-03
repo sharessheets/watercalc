@@ -7,6 +7,8 @@
 
 const AUTH0_DOMAIN = 'dev-yncppqxbhx4m1lbd.us.auth0.com';
 const AUTH0_CLIENT_ID = 'Ij2XpgNkCg7FBPXJYA7dCBiaKNO3qi4O';
+// MUST match the API Identifier you create in Auth0 Dashboard → APIs
+const AUTH0_AUDIENCE = 'https://proof-calc-api';
 
 // ========== API CONFIG ==========
 //
@@ -34,11 +36,11 @@ async function initAuth0() {
   auth0Client = await auth0.createAuth0Client({
     domain: AUTH0_DOMAIN,
     clientId: AUTH0_CLIENT_ID,
-    authorizationParams: {
-      redirect_uri: window.location.origin + window.location.pathname,
-      // If you add an API identifier in Auth0, set "audience" here.
-      // audience: 'https://your-api-identifier',
-    },
+authorizationParams: {
+  redirect_uri: window.location.origin + window.location.pathname,
+  audience: AUTH0_AUDIENCE,
+},
+
     cacheLocation: 'localstorage',
     useRefreshTokens: true,
   });
@@ -331,3 +333,4 @@ async function handleCalcBottom() {
     renderLog();
   } catch (err) {
     console.error(e
+
