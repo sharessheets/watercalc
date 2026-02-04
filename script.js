@@ -11,178 +11,29 @@ const AUTH0_AUDIENCE = 'https://proof-calc-api';
 // Cloudflare Worker URL.
 const API_BASE_URL = 'https://proof-calc-worker.sharessheets.workers.dev';
 
+// Auth0 client + token cache
 let auth0Client = null;
 let idToken = null; // cached Auth0 access token (JWT)
 
-// ========== LOG STATE ==========
+// ========== LOCAL STORAGE LOG ==========
+
 let logEntries = [];
 
-// ========== FORMAT HELPERS ==========
-
-function formatPgConv(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return String(value ?? '');
-  }
-  // Always show 5 decimal places, including trailing zeros
-  return n.toFixed(5);
-}
-
-function formatSecondH2O(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return String(value ?? '');
-  }
-  // Round to hundredths
-  return n.toFixed(2);
-}
-
-function formatNewWeight(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) {
-    return String(value ?? '');
-  }
-  // Round to whole number and add thousands separators
-  return Math.round(n).toLocaleString('en-US');
-}
-
-// ========== AUTH0 INITIALIZATION ==========
-
-async function initAuth0() {
-  if (!window.auth0) {
-    console.error('Auth0 SPA SDK not loaded.');
-    return;
-  }
-
-  auth0Client = await auth0.createAuth0Client({
-    domain: AUTH0_DOMAIN,
-    clientId: AUTH0_CLIENT_ID,
-    authorizationParams: {
-      redirect_uri: window.location.origin + window.location.pathname,
-      audience: AUTH0_AUDIENCE,
-    },
-    cacheLocation: 'localstorage',
-    useRefreshTokens: true,
-  });
-
-  // Handle redirect callback (after login)
-  const query = window.location.search;
-  if (query.includes('code=') && query.includes('state=')) {
-    try {
-      await auth0Client.handleRedirectCallback();
-    } catch (err) {
-      console.error('Auth0 redirect error:', err);
-    } finally {
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
-  await refreshAuthState();
-}
-
-async function refreshAuthState() {
-  if (!auth0Client) return;
-
-  const isAuthenticated = await auth0Client.isAuthenticated();
-  const btnLogin = document.getElementById('btnLogin');
-  const btnLogout = document.getElementById('btnLogout');
-  const authStatus = document.getElementById('authStatus');
-  const app = document.getElementById('app');
-
-  if (isAuthenticated) {
-    try {
-      idToken = await auth0Client.getTokenSilently();
-    } catch (err) {
-      console.error('Error getting token silently:', err);
-      idToken = null;
-    }
-
-    if (btnLogin) btnLogin.style.display = 'none';
-    if (btnLogout) btnLogout.style.display = 'inline-block';
-    if (authStatus) authStatus.textContent = 'Logged in';
-    if (app) app.style.display = 'block';
-  } else {
-    idToken = null;
-    if (btnLogin) btnLogin.style.display = 'inline-block';
-    if (btnLogout) btnLogout.style.display = 'none';
-    if (authStatus) authStatus.textContent = 'Not logged in';
-    if (app) app.style.display = 'none';
-  }
-}
-
-async function handleLogin() {
-  if (!auth0Client) return;
-  await auth0Client.loginWithRedirect({
-    authorizationParams: {
-      redirect_uri: window.location.origin + window.location.pathname,
-      audience: AUTH0_AUDIENCE,
-    },
-  });
-}
-
-async function handleLogout() {
-  if (!auth0Client) return;
-  auth0Client.logout({
-    logoutParams: {
-      returnTo: window.location.origin + window.location.pathname,
-    },
-  });
-}
-
-// ========== API HELPER ==========
-
-async function callApi(path, payload) {
-  if (!API_BASE_URL) {
-    throw new Error('API_BASE_URL is not configured in script.js');
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-  // Attach Auth0 token if we have one
-  if (idToken) {
-    headers['Authorization'] = `Bearer ${idToken}`;
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-
-  let data;
-  try {
-    data = await response.json();
-  } catch (err) {
-    throw new Error(`Invalid JSON from API (status ${response.status})`);
-  }
-
-  if (!response.ok || data.ok === false) {
-    const msg = (data && data.error) || `API error (status ${response.status})`;
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
-// ========== LOG HELPERS ==========
-
 function loadLogFromStorage() {
-  const stored = localStorage.getItem('calcLog');
-  if (!stored) {
-    logEntries = [];
-    return;
-  }
   try {
-    const parsed = JSON.parse(stored);
+    const raw = localStorage.getItem('calcLog');
+    if (!raw) {
+      logEntries = [];
+      return;
+    }
+    const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       logEntries = parsed;
     } else {
       logEntries = [];
     }
-  } catch {
+  } catch (err) {
+    console.warn('Failed to load calcLog from localStorage:', err);
     logEntries = [];
   }
 }
@@ -191,23 +42,27 @@ function saveLogToStorage() {
   try {
     localStorage.setItem('calcLog', JSON.stringify(logEntries));
   } catch (err) {
-    console.error('Error saving log to localStorage:', err);
+    console.warn('Failed to save calcLog to localStorage:', err);
   }
 }
 
 function appendLogEntry(entry) {
-  logEntries.unshift(entry);
-  // Keep last 10
-  logEntries = logEntries.slice(0, 10);
+  logEntries.push(entry);
   saveLogToStorage();
 }
 
+function clearLog() {
+  logEntries = [];
+  saveLogToStorage();
+  renderLog();
+}
+
 function renderLog() {
-  const pre = document.getElementById('logOutput');
-  if (!pre) return;
+  const outEl = document.getElementById('logOutput');
+  if (!outEl) return;
 
   if (!logEntries.length) {
-    pre.textContent = '(no entries yet)';
+    outEl.textContent = '(no entries yet)';
     return;
   }
 
@@ -221,7 +76,7 @@ function renderLog() {
         `  PG Conv (B5):     ${formatPgConv(entry.pgConv)}`,
         `  2nd H2O (B6):     ${formatSecondH2O(entry.secondH2O)}`,
         `  2nd Weight (B8):  ${formatNewWeight(entry.newWeight)}`,
-        '',
+        ''
       ].join('\n');
     } else if (entry.type === 'bottom') {
       return [
@@ -229,33 +84,184 @@ function renderLog() {
         `  Dist Weight (B13): ${entry.distWeight}`,
         `  Dist PF (B15):     ${entry.distPF}`,
         `  PG Conv (B16):     ${formatPgConv(entry.pgConv)}`,
-        `  1st H2O (B17):     ${entry.firstH2O}`,
-        '',
+        `  1st H2O (B17):     ${formatSecondH2O(entry.firstH2O)}`,
+        ''
+      ].join('\n');
+    } else if (entry.type === 'variable') {
+      return [
+        `#${idx + 1} [VARIABLE] ${ts}`,
+        `  Weight:            ${entry.weight}`,
+        `  Current Proof:     ${entry.proofCurrent}`,
+        `  Target Proof:      ${entry.proofTarget}`,
+        `  Curr PG Conv:      ${formatPgConv(entry.currentPgConv)}`,
+        `  Target PG Conv:    ${formatPgConv(entry.targetPgConv)}`,
+        `  Water to Add:      ${formatSecondH2O(entry.secondH2O)}`,
+        `  New Weight:        ${formatNewWeight(entry.newWeight)}`,
+        ''
       ].join('\n');
     } else {
       return `#${idx + 1} [UNKNOWN] ${ts}`;
     }
   });
 
-  pre.textContent = lines.join('\n');
+  outEl.textContent = lines.join('\n');
 }
 
-function clearLog() {
-  if (!confirm('Clear calculation log?')) return;
-  logEntries = [];
-  saveLogToStorage();
-  renderLog();
+// ========== FORMATTING HELPERS (UI ONLY) ==========
+
+function formatPgConv(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return num.toFixed(5); // keep trailing zeros
 }
 
-// ========== CALCULATOR HANDLERS ==========
+function formatSecondH2O(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return num.toFixed(2);
+}
 
-// Top: 2nd Round Water (Sheet2)
+function formatNewWeight(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '';
+  return Math.round(num).toLocaleString('en-US');
+}
+
+// ========== AUTH0 HELPERS ==========
+
+async function initAuth0() {
+  if (!window.createAuth0Client) {
+    console.error('Auth0 SPA SDK not loaded. Make sure auth0-spa-js is included.');
+    return;
+  }
+
+  auth0Client = await window.createAuth0Client({
+    domain: AUTH0_DOMAIN,
+    clientId: AUTH0_CLIENT_ID,
+    authorizationParams: {
+      audience: AUTH0_AUDIENCE,
+      redirect_uri: window.location.origin
+    }
+  });
+
+  // Handle the redirect back from Auth0
+  if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+    try {
+      await auth0Client.handleRedirectCallback();
+    } catch (err) {
+      console.error('Error handling Auth0 redirect callback:', err);
+    } finally {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+}
+
+async function refreshAuthState() {
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  const app = document.getElementById('app');
+  const authStatus = document.getElementById('authStatus');
+
+  if (!auth0Client) {
+    console.warn('Auth0 client not initialized yet.');
+    return;
+  }
+
+  const isAuthenticated = await auth0Client.isAuthenticated();
+
+  if (isAuthenticated) {
+    if (btnLogin) btnLogin.style.display = 'none';
+    if (btnLogout) btnLogout.style.display = 'inline-block';
+    if (app) app.style.display = 'block';
+
+    try {
+      idToken = await auth0Client.getTokenSilently();
+    } catch (err) {
+      console.error('Failed to get Auth0 token silently:', err);
+      idToken = null;
+    }
+
+    if (authStatus) authStatus.textContent = 'Logged in';
+  } else {
+    if (btnLogin) btnLogin.style.display = 'inline-block';
+    if (btnLogout) btnLogout.style.display = 'none';
+    if (app) app.style.display = 'none';
+    idToken = null;
+    if (authStatus) authStatus.textContent = 'Not logged in';
+  }
+}
+
+async function handleLogin() {
+  if (!auth0Client) {
+    console.error('Auth0 client not initialized.');
+    return;
+  }
+  await auth0Client.loginWithRedirect({
+    authorizationParams: {
+      audience: AUTH0_AUDIENCE,
+      redirect_uri: window.location.origin
+    }
+  });
+}
+
+async function handleLogout() {
+  if (!auth0Client) {
+    console.error('Auth0 client not initialized.');
+    return;
+  }
+  await auth0Client.logout({
+    logoutParams: {
+      returnTo: window.location.origin
+    }
+  });
+}
+
+// ========== API CALL HELPER ==========
+
+async function callApi(path, payload) {
+  if (!API_BASE_URL) {
+    throw new Error('API_BASE_URL is not configured in script.js');
+  }
+
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  // Attach Auth0 token if we have one
+  if (idToken) {
+    headers['Authorization'] = `Bearer ${idToken}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload ?? {})
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    throw new Error(`Failed to parse JSON from ${path}: ${err.message}`);
+  }
+
+  if (!response.ok) {
+    const msg = data && data.error ? data.error : response.statusText;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+// ========== CALC HANDLERS ==========
+
+// Top calculator (80 PF fixed)
 async function handleCalcTop() {
   const weightInput = document.getElementById('weightTop');
   const proofInput = document.getElementById('proofTop');
   const pgConvSpan = document.getElementById('pgConvTop');
-  const secondH2OSpan = document.getElementById('secondH2O');
-  const newWeightSpan = document.getElementById('newWeight');
+  const secondH2OSpan = document.getElementById('secondH2OTop');
+  const newWeightSpan = document.getElementById('newWeightTop');
 
   if (!weightInput || !proofInput || !pgConvSpan || !secondH2OSpan || !newWeightSpan) {
     alert('Top calculator elements not found.');
@@ -263,26 +269,30 @@ async function handleCalcTop() {
   }
 
   const weightStr = weightInput.value.trim();
-  const proofStr = proofInput.value.trim(); // proof must stay as text (e.g. "80.136")
+  const proofStr = proofInput.value.trim();
 
   if (!weightStr || !proofStr) {
-    alert('Please enter both Weight and Proof for the top calculator.');
+    alert('Please enter both weight and proof.');
     return;
   }
 
-  const weight = Number(weightStr);
-  if (!Number.isFinite(weight)) {
-    alert('Weight (B2) must be a valid number.');
+  const weightNum = Number(weightStr);
+  if (!Number.isFinite(weightNum)) {
+    alert('Weight must be a valid number.');
     return;
   }
 
   try {
     const result = await callApi('/calc/top', {
-      weight,
-      proof: proofStr,
+      weight: weightStr,
+      proof: proofStr
     });
 
-    // Worker returns: { ok, pgConv, secondH2O, newWeight }
+    if (!result || result.ok === false) {
+      const msg = result && result.error ? result.error : 'Unknown error.';
+      throw new Error(msg);
+    }
+
     pgConvSpan.textContent = formatPgConv(result.pgConv);
     secondH2OSpan.textContent = formatSecondH2O(result.secondH2O);
     newWeightSpan.textContent = formatNewWeight(result.newWeight);
@@ -292,9 +302,9 @@ async function handleCalcTop() {
       timestamp: new Date().toISOString(),
       weightTop: weightStr,
       proofTop: proofStr,
-      pgConv: formatPgConv(result.pgConv),
-      secondH2O: formatSecondH2O(result.secondH2O),
-      newWeight: formatNewWeight(result.newWeight),
+      pgConv: result.pgConv,
+      secondH2O: result.secondH2O,
+      newWeight: result.newWeight
     });
 
     renderLog();
@@ -304,7 +314,7 @@ async function handleCalcTop() {
   }
 }
 
-// Bottom: 1st Water (Sheet2)
+// Bottom calculator (1st water)
 async function handleCalcBottom() {
   const distWeightInput = document.getElementById('distWeight');
   const distPFInput = document.getElementById('distPF');
@@ -317,42 +327,40 @@ async function handleCalcBottom() {
   }
 
   const distWeightStr = distWeightInput.value.trim();
-  const distPFStr = distPFInput.value.trim(); // user enters "90.5" as text
+  const distPFStr = distPFInput.value.trim();
 
   if (!distWeightStr || !distPFStr) {
-    alert('Please enter both Dist Weight and Dist PF for the bottom calculator.');
+    alert('Please enter both distilled weight and distilled PF.');
     return;
   }
 
-  const distWeight = Number(distWeightStr);
-  const distPF = Number(distPFStr);
-
-  if (!Number.isFinite(distWeight)) {
-    alert('Dist Weight (B13) must be a valid number.');
-    return;
-  }
-  if (!Number.isFinite(distPF)) {
-    alert('Dist PF (B15) must be a valid number with one decimal.');
+  const distWeightNum = Number(distWeightStr);
+  if (!Number.isFinite(distWeightNum)) {
+    alert('Distilled weight must be a valid number.');
     return;
   }
 
   try {
     const result = await callApi('/calc/bottom', {
-      distWeight,
-      distPF,
+      distWeight: distWeightStr,
+      distPF: distPFStr
     });
 
-    // Worker returns: { ok, pgConv, firstH2O }
+    if (!result || result.ok === false) {
+      const msg = result && result.error ? result.error : 'Unknown error.';
+      throw new Error(msg);
+    }
+
     pgConvSpan.textContent = formatPgConv(result.pgConv);
-    firstH2OSpan.textContent = String(result.firstH2O);
+    firstH2OSpan.textContent = formatSecondH2O(result.firstH2O);
 
     appendLogEntry({
       type: 'bottom',
       timestamp: new Date().toISOString(),
       distWeight: distWeightStr,
       distPF: distPFStr,
-      pgConv: formatPgConv(result.pgConv),
-      firstH2O: String(result.firstH2O),
+      pgConv: result.pgConv,
+      firstH2O: result.firstH2O
     });
 
     renderLog();
@@ -362,59 +370,134 @@ async function handleCalcBottom() {
   }
 }
 
-// ========== INITIALIZATION ==========
+// Variable proof calculator
+async function handleCalcVariable() {
+  const weightInput = document.getElementById('varWeight');
+  const proofCurrentInput = document.getElementById('varProofCurrent');
+  const proofTargetInput = document.getElementById('varProofTarget');
+  const pgConvCurrentSpan = document.getElementById('varPgConvCurrent');
+  const pgConvTargetSpan = document.getElementById('varPgConvTarget');
+  const h2OSpan = document.getElementById('varH2O');
+  const newWeightSpan = document.getElementById('varNewWeight');
+
+  if (
+    !weightInput ||
+    !proofCurrentInput ||
+    !proofTargetInput ||
+    !pgConvCurrentSpan ||
+    !pgConvTargetSpan ||
+    !h2OSpan ||
+    !newWeightSpan
+  ) {
+    alert('Variable proof calculator elements not found.');
+    return;
+  }
+
+  const weightStr = weightInput.value.trim();
+  const proofCurrentStr = proofCurrentInput.value.trim();
+  const proofTargetStr = proofTargetInput.value.trim();
+
+  if (!weightStr || !proofCurrentStr || !proofTargetStr) {
+    alert('Please enter weight, current proof, and target proof.');
+    return;
+  }
+
+  const weightNum = Number(weightStr);
+  if (!Number.isFinite(weightNum)) {
+    alert('Weight must be a valid number.');
+    return;
+  }
+
+  try {
+    const result = await callApi('/calc/variable', {
+      weight: weightStr,
+      proof: proofCurrentStr,
+      targetProof: proofTargetStr
+    });
+
+    if (!result || result.ok === false) {
+      const msg = result && result.error ? result.error : 'Unknown error.';
+      throw new Error(msg);
+    }
+
+    pgConvCurrentSpan.textContent = formatPgConv(result.currentPgConv);
+    pgConvTargetSpan.textContent = formatPgConv(result.targetPgConv);
+    h2OSpan.textContent = formatSecondH2O(result.secondH2O);
+    newWeightSpan.textContent = formatNewWeight(result.newWeight);
+
+    appendLogEntry({
+      type: 'variable',
+      timestamp: new Date().toISOString(),
+      weight: weightStr,
+      proofCurrent: proofCurrentStr,
+      proofTarget: proofTargetStr,
+      currentPgConv: result.currentPgConv,
+      targetPgConv: result.targetPgConv,
+      secondH2O: result.secondH2O,
+      newWeight: result.newWeight
+    });
+
+    renderLog();
+  } catch (err) {
+    console.error(err);
+    alert(`Variable proof calculation failed: ${err.message}`);
+  }
+}
+
+// ========== TABS ==========
 
 function initTabs() {
   const btnTabTop = document.getElementById('btnTabTop');
   const btnTabBottom = document.getElementById('btnTabBottom');
+  const btnTabVariable = document.getElementById('btnTabVariable');
+
   const panelTop = document.getElementById('panelTop');
   const panelBottom = document.getElementById('panelBottom');
+  const panelVariable = document.getElementById('panelVariable');
 
-  if (!btnTabTop || !btnTabBottom || !panelTop || !panelBottom) {
+  if (!btnTabTop || !btnTabBottom || !btnTabVariable || !panelTop || !panelBottom || !panelVariable) {
     console.warn('Tab elements not found; skipping tab init.');
     return;
   }
 
-  function showTop() {
-    // Buttons
-    btnTabTop.classList.add('active');
-    btnTabBottom.classList.remove('active');
+  function showPanel(name) {
+    btnTabTop.classList.toggle('active', name === 'top');
+    btnTabBottom.classList.toggle('active', name === 'bottom');
+    btnTabVariable.classList.toggle('active', name === 'variable');
 
-    // Panels
-    panelTop.style.display = 'block';
-    panelBottom.style.display = 'none';
-  }
-
-  function showBottom() {
-    btnTabTop.classList.remove('active');
-    btnTabBottom.classList.add('active');
-
-    panelTop.style.display = 'none';
-    panelBottom.style.display = 'block';
+    panelTop.style.display = name === 'top' ? 'block' : 'none';
+    panelBottom.style.display = name === 'bottom' ? 'block' : 'none';
+    panelVariable.style.display = name === 'variable' ? 'block' : 'none';
   }
 
   btnTabTop.addEventListener('click', (e) => {
     e.preventDefault();
-    showTop();
+    showPanel('top');
   });
 
   btnTabBottom.addEventListener('click', (e) => {
     e.preventDefault();
-    showBottom();
+    showPanel('bottom');
   });
 
-  // Ensure we start on the top tab (matches your HTML)
-  showTop();
+  btnTabVariable.addEventListener('click', (e) => {
+    e.preventDefault();
+    showPanel('variable');
+  });
+
+  // Default
+  showPanel('top');
 }
 
+// ========== INIT UI ==========
+
 function initCalculatorUI() {
-  // Load log from localStorage
   loadLogFromStorage();
   renderLog();
 
-  // Wire up buttons
   const btnCalcTop = document.getElementById('btnCalcTop');
   const btnCalcBottom = document.getElementById('btnCalcBottom');
+  const btnCalcVariable = document.getElementById('btnCalcVariable');
   const btnViewLog = document.getElementById('btnViewLog');
   const btnClearLog = document.getElementById('btnClearLog');
   const btnLogin = document.getElementById('btnLogin');
@@ -429,6 +512,12 @@ function initCalculatorUI() {
   if (btnCalcBottom) {
     btnCalcBottom.addEventListener('click', () => {
       handleCalcBottom();
+    });
+  }
+
+  if (btnCalcVariable) {
+    btnCalcVariable.addEventListener('click', () => {
+      handleCalcVariable();
     });
   }
 
@@ -458,10 +547,10 @@ function initCalculatorUI() {
     });
   }
 
-  // ⬇⬇ ADD THIS
   initTabs();
-  
 }
+
+// ========== BOOTSTRAP ==========
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -473,4 +562,3 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
-
