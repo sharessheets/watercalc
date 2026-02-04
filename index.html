@@ -2,48 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Proof / Water Calculator</title>
+  <title>Water Calculator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Proof / Water Calculator</h1>
+  <h1>Water Calculator</h1>
 
   <!-- Everything that should be protected goes inside #app -->
   <div id="app" style="display: none;">
     <!-- Tabs -->
     <div class="tabs">
       <button id="btnTabTop" class="tab-button active">
-        2nd Round Water (Top)
+        80.0 Proof Water Calculation
       </button>
       <button id="btnTabBottom" class="tab-button">
-        1st Water (Bottom)
+       76.0 Proof Calc
       </button>
     </div>
 
     <!-- Top calculator tab -->
 <section id="panelTop" class="calculator tab-panel">
-  <h2>2nd Round Water Calculation (Top)</h2>
+  <h2>80.0 Proof Water Calculation</h2>
 
   <label>
-    Weight (B2):
+    Weight:
     <input type="text" id="weightTop" inputmode="decimal">
   </label>
 
   <label>
-    Proof (B4) – 3 decimals (e.g. 80.125):
-    <input type="text" id="proofTop" placeholder="80.125">
+    Proof – Must use 3 decimals (e.g. 81.225):
+    <input type="text" id="proofTop">
   </label>
 
   <div class="output">
-    <div>PG Conv (B5): <span id="pgConvTop"></span></div>
-    <div>2nd H2O (B6): <span id="secondH2O"></span></div>
-    <div>2nd Weight (B8): <span id="newWeight"></span></div>
+    <div>PG Conv: <span id="pgConvTop"></span></div>
+    <div>Water to Add: <span id="secondH2O"></span></div>
+    <div>Total 80.0 Proof Weight: <span id="newWeight"></span></div>
   </div>
 
-  <button id="btnCalcTop">Calculate 2nd Round</button>
+  <button id="btnCalcTop">Calculate</button>
 </section>
 
 <section id="panelBottom" class="calculator tab-panel" style="display: none;">
@@ -96,6 +96,7 @@
 </body>
 
 </html>
+
 
 
 
