@@ -29,8 +29,15 @@ function formatPgConv(value) {
 }
 
 function isValidThreeDecimalProof(str) {
-  // must be digits + "." + exactly 3 digits
-  return /^[0-9]+\\.[0-9]{3}$/.test(str);
+  if (typeof str !== 'string') return false;
+
+  // Normalize whitespace and unicode oddities
+  const clean = str
+    .trim()
+    .replace(/\s+/g, '')
+    .normalize('NFKC');
+
+  return /^[0-9]+\.[0-9]{3}$/.test(clean);
 }
 
 function formatSecondH2O(value) {
@@ -579,6 +586,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
