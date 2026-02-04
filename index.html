@@ -11,13 +11,6 @@
 <body>
   <h1>Proof / Water Calculator</h1>
 
-  <!-- Auth bar -->
-  <div id="auth-bar">
-    <span id="authStatus">Checking login status…</span>
-    <button id="btnLogin" style="display: none;">Log In</button>
-    <button id="btnLogout" style="display: none;">Log Out</button>
-  </div>
-
   <!-- Everything that should be protected goes inside #app -->
   <div id="app" style="display: none;">
     <!-- Tabs -->
@@ -86,6 +79,13 @@
     </section>
   </div> <!-- end #app -->
 
+    <!-- Auth bar -->
+  <div id="auth-bar">
+    <span id="authStatus">Checking login status…</span>
+    <button id="btnLogin" style="display: none;">Log In</button>
+    <button id="btnLogout" style="display: none;">Log Out</button>
+  </div>
+
   <!-- Auth0 SPA SDK -->
   <script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
 
@@ -96,6 +96,7 @@
 </body>
 
 </html>
+
 
 
 
