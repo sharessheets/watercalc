@@ -35,7 +35,12 @@
 
   <label>
     Proof – Must use 3 decimals (e.g. 81.225):
-    <input type="text" id="proofTop">
+    <input
+  type="text"
+  id="proofTop"
+  inputmode="decimal"
+  pattern="^[0-9]+\\.[0-9]{3}$"
+  placeholder="e.g. 80.620">
   </label>
 
   <div class="output">
@@ -79,7 +84,12 @@
 
   <label>
     Current Proof - Must use 3 decimals
-    <input type="text" id="varProofCurrent" inputmode="decimal" placeholder="e.g. 177.762">
+   <input
+  type="text"
+  id="varProofCurrent"
+  inputmode="decimal"
+  pattern="^[0-9]+\\.[0-9]{3}$"
+  placeholder="e.g. 177.764">
   </label>
 
   <label>
@@ -125,6 +135,7 @@
 </body>
 
 </html>
+
 
 
 
