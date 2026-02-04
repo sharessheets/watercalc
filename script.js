@@ -396,12 +396,6 @@ async function handleCalcVariable() {
   const h2OSpan = document.getElementById('varH2O');
   const newWeightSpan = document.getElementById('varNewWeight');
 
-  if (!isValidThreeDecimalProof(proofCurrentStr)) {
-  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
-  proofCurrentInput.focus();
-  return;
-}
-
   if (
     !weightInput ||
     !proofCurrentInput ||
@@ -414,7 +408,7 @@ async function handleCalcVariable() {
     alert('Variable proof calculator elements not found in the DOM.');
     return;
   }
-
+  
   const weightStr = weightInput.value.trim();
   const proofCurrentStr = proofCurrentInput.value.trim();
   const proofTargetStr = proofTargetInput.value.trim();
@@ -430,6 +424,12 @@ async function handleCalcVariable() {
     return;
   }
 
+  if (!isValidThreeDecimalProof(proofCurrentStr)) {
+  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
+  proofCurrentInput.focus();
+  return;
+}
+  
   try {
     const result = await callApi('/calc/variable', {
       weight: weightStr,
@@ -579,6 +579,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
