@@ -213,6 +213,7 @@ function renderLog() {
 
   const lines = logEntries.map((entry, idx) => {
     const ts = entry.timestamp || '';
+
     if (entry.type === 'top') {
       return [
         `#${idx + 1} [TOP] ${ts}`,
@@ -223,28 +224,38 @@ function renderLog() {
         `  2nd Weight (B8):  ${formatNewWeight(entry.newWeight)}`,
         '',
       ].join('\n');
-    } else if (entry.type === 'bottom') {
+    }
+
+    if (entry.type === 'bottom') {
       return [
         `#${idx + 1} [BOTTOM] ${ts}`,
         `  Dist Weight (B13): ${entry.distWeight}`,
         `  Dist PF (B15):     ${entry.distPF}`,
         `  PG Conv (B16):     ${formatPgConv(entry.pgConv)}`,
-        `  1st H2O (B17):     ${entry.firstH2O}`,
+        `  1st H2O (B17):     ${formatSecondH2O(entry.firstH2O)}`,
         '',
       ].join('\n');
-    } else {
-      return `#${idx + 1} [UNKNOWN] ${ts}`;
     }
+
+    if (entry.type === 'variable') {
+      return [
+        `#${idx + 1} [VARIABLE] ${ts}`,
+        `  Weight:            ${entry.weight}`,
+        `  Current Proof:     ${entry.proofCurrent}`,
+        `  Target Proof:      ${entry.proofTarget}`,
+        `  Curr PG Conv:      ${formatPgConv(entry.currentPgConv)}`,
+        `  Target PG Conv:    ${formatPgConv(entry.targetPgConv)}`,
+        `  Water to Add:      ${formatSecondH2O(entry.secondH2O)}`,
+        `  New Weight:        ${formatNewWeight(entry.newWeight)}`,
+        '',
+      ].join('\n');
+    }
+
+    // Fallback for any older / unknown entries
+    return `#${idx + 1} [UNKNOWN] ${ts}`;
   });
 
   pre.textContent = lines.join('\n');
-}
-
-function clearLog() {
-  if (!confirm('Clear calculation log?')) return;
-  logEntries = [];
-  saveLogToStorage();
-  renderLog();
 }
 
 // ========== CALCULATOR HANDLERS ==========
@@ -551,6 +562,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
