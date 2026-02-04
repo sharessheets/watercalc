@@ -14,14 +14,22 @@
   <!-- Everything that should be protected goes inside #app -->
   <div id="app" style="display: none;">
     <!-- Tabs -->
-    <div class="tabs">
-      <button id="btnTabTop" class="tab-button active">
-        80.0 PF
-      </button>
-      <button id="btnTabBottom" class="tab-button">
-       76.0 PF
-      </button>
-    </div>
+<div class="tabs">
+  <button id="btnTabTop" class="tab-button active">
+    80.0 PF
+  </button>
+
+ <!-- <button id="btnTabBottom" class="tab-button">
+    76.0 PF
+  </button>
+  -->
+
+  <!-- NEW: Variable proof tab -->
+  <button id="btnTabVariable" class="tab-button">
+    Variable PF
+  </button>
+</div>
+
 
     <!-- Top calculator tab -->
 <section id="panelTop" class="calculator tab-panel">
@@ -67,7 +75,34 @@
   <button id="btnCalcBottom">Calculate 1st Water</button>
 </section>
 
+<!-- NEW: Variable Proof Calculator -->
+<section id="panelVariable" class="calculator tab-panel" style="display: none;">
+  <h2>Variable Proof Calculator</h2>
 
+  <label>
+    Weight (starting weight):
+    <input type="text" id="varWeight" inputmode="decimal" placeholder="e.g. 115486.56">
+  </label>
+
+  <label>
+    Current Proof:
+    <input type="text" id="varProofCurrent" inputmode="decimal" placeholder="e.g. 90.520">
+  </label>
+
+  <label>
+    Target Proof:
+    <input type="text" id="varProofTarget" inputmode="decimal" placeholder="e.g. 76.0">
+  </label>
+
+  <div class="output">
+    <div>Current PG Conv: <span id="varPgConvCurrent"></span></div>
+    <div>Target PG Conv: <span id="varPgConvTarget"></span></div>
+    <div>Water to Add: <span id="varH2O"></span></div>
+    <div>New Weight: <span id="varNewWeight"></span></div>
+  </div>
+
+  <button id="btnCalcVariable">Calculate Variable Proof</button>
+</section>
 
     <hr>
 
@@ -97,3 +132,4 @@
 </body>
 
 </html>
+
