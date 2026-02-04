@@ -272,12 +272,6 @@ async function handleCalcTop() {
   const pgConvSpan = document.getElementById('pgConvTop');
   const secondH2OSpan = document.getElementById('secondH2O');
   const newWeightSpan = document.getElementById('newWeight');
-
-  if (!isValidThreeDecimalProof(proofStr)) {
-  alert('Proof must have EXACTLY 3 decimal places (e.g. 80.620).');
-  proofInput.focus();
-  return;
-}
   
   if (!weightInput || !proofInput || !pgConvSpan || !secondH2OSpan || !newWeightSpan) {
     alert('Top calculator elements not found.');
@@ -292,6 +286,12 @@ async function handleCalcTop() {
     return;
   }
 
+    if (!isValidThreeDecimalProof(proofStr)) {
+  alert('Proof must have EXACTLY 3 decimal places (e.g. 80.620).');
+  proofInput.focus();
+  return;
+}
+  
   const weight = Number(weightStr);
   if (!Number.isFinite(weight)) {
     alert('Weight (B2) must be a valid number.');
@@ -579,6 +579,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
