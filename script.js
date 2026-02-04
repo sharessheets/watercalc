@@ -279,39 +279,52 @@ async function handleCalcTop() {
   const pgConvSpan = document.getElementById('pgConvTop');
   const secondH2OSpan = document.getElementById('secondH2O');
   const newWeightSpan = document.getElementById('newWeight');
-  
+
   if (!weightInput || !proofInput || !pgConvSpan || !secondH2OSpan || !newWeightSpan) {
     alert('Top calculator elements not found.');
     return;
   }
 
-  const weightStr = weightInput.value.trim();
-  const proofStr = proofInput.value.trim(); // proof must stay as text (e.g. "80.136")
-  
-    if (!isValidThreeDecimalProof(proofStr)) {
-  alert('Proof must have EXACTLY 3 decimal places (e.g. 80.620).');
-  proofInput.focus();
-  return;
-}
+  clearInputError(weightInput);
+  clearInputError(proofInput);
 
-  if (!weightStr || !proofStr) {
-    alert('Please enter both Weight and Proof for the top calculator.');
+  const weightStr = weightInput.value.trim();
+  const proofStr = proofInput.value.trim();
+
+  if (!weightStr) {
+    markInputError(weightInput, 'Weight is required.');
+    weightInput.focus();
     return;
   }
-  
+
+  if (!proofStr) {
+    markInputError(proofInput, 'Proof is required.');
+    proofInput.focus();
+    return;
+  }
+
+  if (!isValidThreeDecimalProof(proofStr)) {
+    markInputError(
+      proofInput,
+      'Proof must have EXACTLY 3 decimal places (e.g. 80.620).'
+    );
+    proofInput.focus();
+    return;
+  }
+
   const weight = Number(weightStr);
   if (!Number.isFinite(weight)) {
-    alert('Weight (B2) must be a valid number.');
+    markInputError(weightInput, 'Weight must be a valid number.');
+    weightInput.focus();
     return;
   }
 
   try {
     const result = await callApi('/calc/top', {
       weight,
-      proof: proofStr,
+      proof: proofStr, // sent EXACTLY as typed
     });
 
-    // Worker returns: { ok, pgConv, secondH2O, newWeight }
     pgConvSpan.textContent = formatPgConv(result.pgConv);
     secondH2OSpan.textContent = formatSecondH2O(result.secondH2O);
     newWeightSpan.textContent = formatNewWeight(result.newWeight);
@@ -412,52 +425,71 @@ async function handleCalcVariable() {
     !h2OSpan ||
     !newWeightSpan
   ) {
-    alert('Variable proof calculator elements not found in the DOM.');
+    alert('Variable proof calculator elements not found.');
     return;
   }
-  
+
+  clearInputError(weightInput);
+  clearInputError(proofCurrentInput);
+  clearInputError(proofTargetInput);
+
   const weightStr = weightInput.value.trim();
   const proofCurrentStr = proofCurrentInput.value.trim();
   const proofTargetStr = proofTargetInput.value.trim();
 
-    if (!isValidThreeDecimalProof(proofCurrentStr)) {
-  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 177.726).');
-  proofCurrentInput.focus();
-  return;
-}
+  if (!weightStr) {
+    markInputError(weightInput, 'Weight is required.');
+    weightInput.focus();
+    return;
+  }
 
-  if (!weightStr || !proofCurrentStr || !proofTargetStr) {
-    alert('Please enter weight, current proof, and target proof.');
+  if (!proofCurrentStr) {
+    markInputError(proofCurrentInput, 'Current proof is required.');
+    proofCurrentInput.focus();
+    return;
+  }
+
+  if (!proofTargetStr) {
+    markInputError(proofTargetInput, 'Target proof is required.');
+    proofTargetInput.focus();
+    return;
+  }
+
+  if (!isValidThreeDecimalProof(proofCurrentStr)) {
+    markInputError(
+      proofCurrentInput,
+      'Current proof must have EXACTLY 3 decimal places (e.g. 90.520).'
+    );
+    proofCurrentInput.focus();
     return;
   }
 
   const weightNum = Number(weightStr);
   if (!Number.isFinite(weightNum)) {
-    alert('Weight must be a valid number.');
+    markInputError(weightInput, 'Weight must be a valid number.');
+    weightInput.focus();
+    return;
+  }
+
+  const targetProofNum = Number(proofTargetStr);
+  if (!Number.isFinite(targetProofNum)) {
+    markInputError(proofTargetInput, 'Target proof must be numeric (e.g. 76.0).');
+    proofTargetInput.focus();
     return;
   }
 
   try {
     const result = await callApi('/calc/variable', {
       weight: weightStr,
-      proof: proofCurrentStr,
+      proof: proofCurrentStr,   // EXACT string
       targetProof: proofTargetStr,
     });
-
-    if (!result || result.ok === false) {
-      const msg = result && result.error ? result.error : 'Unknown error.';
-      throw new Error(msg);
-    }
-
-    // Backend returns:
-    // { ok, currentPgConv, targetPgConv, secondH2O, newWeight }
 
     pgConvCurrentSpan.textContent = formatPgConv(result.currentPgConv);
     pgConvTargetSpan.textContent = formatPgConv(result.targetPgConv);
     h2OSpan.textContent = formatSecondH2O(result.secondH2O);
     newWeightSpan.textContent = formatNewWeight(result.newWeight);
 
-    // Add to log
     appendLogEntry({
       type: 'variable',
       timestamp: new Date().toISOString(),
@@ -473,7 +505,7 @@ async function handleCalcVariable() {
     renderLog();
   } catch (err) {
     console.error(err);
-    alert(`Variable proof calculation failed: ${err.message}`);
+    alert(`Variable calculation failed: ${err.message}`);
   }
 }
 
@@ -586,6 +618,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
