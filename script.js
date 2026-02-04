@@ -362,49 +362,131 @@ async function handleCalcBottom() {
   }
 }
 
+// ========== VARIABLE PROOF CALCULATOR ==========
+
+async function handleCalcVariable() {
+  const weightInput = document.getElementById('varWeight');
+  const proofCurrentInput = document.getElementById('varProofCurrent');
+  const proofTargetInput = document.getElementById('varProofTarget');
+
+  const pgConvCurrentSpan = document.getElementById('varPgConvCurrent');
+  const pgConvTargetSpan = document.getElementById('varPgConvTarget');
+  const h2OSpan = document.getElementById('varH2O');
+  const newWeightSpan = document.getElementById('varNewWeight');
+
+  if (
+    !weightInput ||
+    !proofCurrentInput ||
+    !proofTargetInput ||
+    !pgConvCurrentSpan ||
+    !pgConvTargetSpan ||
+    !h2OSpan ||
+    !newWeightSpan
+  ) {
+    alert('Variable proof calculator elements not found in the DOM.');
+    return;
+  }
+
+  const weightStr = weightInput.value.trim();
+  const proofCurrentStr = proofCurrentInput.value.trim();
+  const proofTargetStr = proofTargetInput.value.trim();
+
+  if (!weightStr || !proofCurrentStr || !proofTargetStr) {
+    alert('Please enter weight, current proof, and target proof.');
+    return;
+  }
+
+  const weightNum = Number(weightStr);
+  if (!Number.isFinite(weightNum)) {
+    alert('Weight must be a valid number.');
+    return;
+  }
+
+  try {
+    const result = await callApi('/calc/variable', {
+      weight: weightStr,
+      proof: proofCurrentStr,
+      targetProof: proofTargetStr,
+    });
+
+    if (!result || result.ok === false) {
+      const msg = result && result.error ? result.error : 'Unknown error.';
+      throw new Error(msg);
+    }
+
+    // Backend returns:
+    // { ok, currentPgConv, targetPgConv, secondH2O, newWeight }
+
+    pgConvCurrentSpan.textContent = formatPgConv(result.currentPgConv);
+    pgConvTargetSpan.textContent = formatPgConv(result.targetPgConv);
+    h2OSpan.textContent = formatSecondH2O(result.secondH2O);
+    newWeightSpan.textContent = formatNewWeight(result.newWeight);
+
+    // Add to log
+    appendLogEntry({
+      type: 'variable',
+      timestamp: new Date().toISOString(),
+      weight: weightStr,
+      proofCurrent: proofCurrentStr,
+      proofTarget: proofTargetStr,
+      currentPgConv: result.currentPgConv,
+      targetPgConv: result.targetPgConv,
+      secondH2O: result.secondH2O,
+      newWeight: result.newWeight,
+    });
+
+    renderLog();
+  } catch (err) {
+    console.error(err);
+    alert(`Variable proof calculation failed: ${err.message}`);
+  }
+}
+
 // ========== INITIALIZATION ==========
 
 function initTabs() {
   const btnTabTop = document.getElementById('btnTabTop');
   const btnTabBottom = document.getElementById('btnTabBottom');
+  const btnTabVariable = document.getElementById('btnTabVariable');
   const panelTop = document.getElementById('panelTop');
   const panelBottom = document.getElementById('panelBottom');
+  const panelVariable = document.getElementById('panelVariable');
 
-  if (!btnTabTop || !btnTabBottom || !panelTop || !panelBottom) {
+  if (!btnTabTop || !btnTabBottom || !btnTabVariable ||
+      !panelTop || !panelBottom || !panelVariable) {
     console.warn('Tab elements not found; skipping tab init.');
     return;
   }
 
-  function showTop() {
+  function showPanel(name) {
     // Buttons
-    btnTabTop.classList.add('active');
-    btnTabBottom.classList.remove('active');
+    btnTabTop.classList.toggle('active', name === 'top');
+    btnTabBottom.classList.toggle('active', name === 'bottom');
+    btnTabVariable.classList.toggle('active', name === 'variable');
 
     // Panels
-    panelTop.style.display = 'block';
-    panelBottom.style.display = 'none';
-  }
-
-  function showBottom() {
-    btnTabTop.classList.remove('active');
-    btnTabBottom.classList.add('active');
-
-    panelTop.style.display = 'none';
-    panelBottom.style.display = 'block';
+    panelTop.style.display = name === 'top' ? 'block' : 'none';
+    panelBottom.style.display = name === 'bottom' ? 'block' : 'none';
+    panelVariable.style.display = name === 'variable' ? 'block' : 'none';
   }
 
   btnTabTop.addEventListener('click', (e) => {
     e.preventDefault();
-    showTop();
+    showPanel('top');
   });
 
   btnTabBottom.addEventListener('click', (e) => {
     e.preventDefault();
-    showBottom();
+    showPanel('bottom');
   });
 
-  // Ensure we start on the top tab (matches your HTML)
-  showTop();
+  btnTabVariable.addEventListener('click', (e) => {
+    e.preventDefault();
+    showPanel('variable');
+  });
+
+  // Start with the same panel your HTML marks as "active"
+  showPanel('top');
 }
 
 function initCalculatorUI() {
@@ -419,6 +501,7 @@ function initCalculatorUI() {
   const btnClearLog = document.getElementById('btnClearLog');
   const btnLogin = document.getElementById('btnLogin');
   const btnLogout = document.getElementById('btnLogout');
+  const btnCalcVariable = document.getElementById('btnCalcVariable');
 
   if (btnCalcTop) {
     btnCalcTop.addEventListener('click', () => {
@@ -432,6 +515,12 @@ function initCalculatorUI() {
     });
   }
 
+if (btnCalcVariable) {
+  btnCalcVariable.addEventListener('click', () => {
+    handleCalcVariable();
+  });
+}
+  
   if (btnViewLog) {
     btnViewLog.addEventListener('click', () => {
       renderLog();
@@ -473,4 +562,5 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
