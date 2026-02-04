@@ -17,6 +17,35 @@ let idToken = null; // cached Auth0 access token (JWT)
 // ========== LOG STATE ==========
 let logEntries = [];
 
+// ========== FORMAT HELPERS ==========
+
+function formatPgConv(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? '');
+  }
+  // Always show 5 decimal places, including trailing zeros
+  return n.toFixed(5);
+}
+
+function formatSecondH2O(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? '');
+  }
+  // Round to hundredths
+  return n.toFixed(2);
+}
+
+function formatNewWeight(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? '');
+  }
+  // Round to whole number and add thousands separators
+  return Math.round(n).toLocaleString('en-US');
+}
+
 // ========== AUTH0 INITIALIZATION ==========
 
 async function initAuth0() {
@@ -189,9 +218,9 @@ function renderLog() {
         `#${idx + 1} [TOP] ${ts}`,
         `  Weight (B2):      ${entry.weightTop}`,
         `  Proof (B4):       ${entry.proofTop}`,
-        `  PG Conv (B5):     ${entry.pgConv}`,
-        `  2nd H2O (B6):     ${entry.secondH2O}`,
-        `  2nd Weight (B8):  ${entry.newWeight}`,
+        `  PG Conv (B5):     ${formatPgConv(entry.pgConv)}`,
+        `  2nd H2O (B6):     ${formatSecondH2O(entry.secondH2O)}`,
+        `  2nd Weight (B8):  ${formatNewWeight(entry.newWeight)}`,
         '',
       ].join('\n');
     } else if (entry.type === 'bottom') {
@@ -199,7 +228,7 @@ function renderLog() {
         `#${idx + 1} [BOTTOM] ${ts}`,
         `  Dist Weight (B13): ${entry.distWeight}`,
         `  Dist PF (B15):     ${entry.distPF}`,
-        `  PG Conv (B16):     ${entry.pgConv}`,
+        `  PG Conv (B16):     ${formatPgConv(entry.pgConv)}`,
         `  1st H2O (B17):     ${entry.firstH2O}`,
         '',
       ].join('\n');
@@ -254,18 +283,18 @@ async function handleCalcTop() {
     });
 
     // Worker returns: { ok, pgConv, secondH2O, newWeight }
-    pgConvSpan.textContent = String(result.pgConv);
-    secondH2OSpan.textContent = String(result.secondH2O);
-    newWeightSpan.textContent = String(result.newWeight);
+    pgConvSpan.textContent = formatPgConv(result.pgConv);
+    secondH2OSpan.textContent = formatSecondH2O(result.secondH2O);
+    newWeightSpan.textContent = formatNewWeight(result.newWeight);
 
     appendLogEntry({
       type: 'top',
       timestamp: new Date().toISOString(),
       weightTop: weightStr,
       proofTop: proofStr,
-      pgConv: String(result.pgConv),
-      secondH2O: String(result.secondH2O),
-      newWeight: String(result.newWeight),
+      pgConv: formatPgConv(result.pgConv),
+      secondH2O: formatSecondH2O(result.secondH2O),
+      newWeight: formatNewWeight(result.newWeight),
     });
 
     renderLog();
@@ -314,7 +343,7 @@ async function handleCalcBottom() {
     });
 
     // Worker returns: { ok, pgConv, firstH2O }
-    pgConvSpan.textContent = String(result.pgConv);
+    pgConvSpan.textContent = formatPgConv(result.pgConv);
     firstH2OSpan.textContent = String(result.firstH2O);
 
     appendLogEntry({
@@ -322,7 +351,7 @@ async function handleCalcBottom() {
       timestamp: new Date().toISOString(),
       distWeight: distWeightStr,
       distPF: distPFStr,
-      pgConv: String(result.pgConv),
+      pgConv: formatPgConv(result.pgConv),
       firstH2O: String(result.firstH2O),
     });
 
