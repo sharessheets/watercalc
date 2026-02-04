@@ -11,112 +11,89 @@
 <body>
   <h1>Water Calculator</h1>
 
-  <div class="auth-bar">
-    <span id="authStatus">Not logged in</span>
-    <button id="btnLogin">Log In</button>
-    <button id="btnLogout" style="display: none;">Log Out</button>
-  </div>
-
   <!-- Everything that should be protected goes inside #app -->
   <div id="app" style="display: none;">
     <!-- Tabs -->
     <div class="tabs">
-      <button id="btnTabTop" class="tab-button active">80.0 PF</button>
-      <button id="btnTabBottom" class="tab-button">76.0 PF</button>
-      <button id="btnTabVariable" class="tab-button">Variable PF</button>
+      <button id="btnTabTop" class="tab-button active">
+        80.0 PF
+      </button>
+      <button id="btnTabBottom" class="tab-button">
+       76.0 PF
+      </button>
     </div>
 
-    <!-- 80 PF Top Calculator -->
-    <section id="panelTop" class="calculator tab-panel">
-      <h2>2nd Water Calculation (Top)</h2>
+    <!-- Top calculator tab -->
+<section id="panelTop" class="calculator tab-panel">
+  <h2>80.0 Proof Water Calculation</h2>
 
-      <label>
-        Weight (B2):
-        <input type="text" id="weightTop" inputmode="decimal" placeholder="e.g. 115486.56">
-      </label>
+  <label>
+    Weight:
+    <input type="text" id="weightTop" inputmode="decimal">
+  </label>
 
-      <label>
-        Proof Text (B4):
-        <input type="text" id="proofTop" placeholder="e.g. 80.620">
-      </label>
+  <label>
+    Proof – Must use 3 decimals (e.g. 81.225):
+    <input type="text" id="proofTop">
+  </label>
 
-      <div class="output">
-        <div>PG Conv (B5): <span id="pgConvTop"></span></div>
-        <div>2nd H2O (B6): <span id="secondH2OTop"></span></div>
-        <div>2nd Weight (B8): <span id="newWeightTop"></span></div>
-      </div>
-
-      <button id="btnCalcTop">Calculate 2nd Water</button>
-    </section>
-
-    <!-- 76 PF / Bottom Calculator -->
-    <section id="panelBottom" class="calculator tab-panel" style="display: none;">
-      <h2>1st Water Calculation (Bottom)</h2>
-
-      <label>
-        Dist Weight (B13):
-        <input type="text" id="distWeight" inputmode="decimal" placeholder="e.g. 100000">
-      </label>
-
-      <label>
-        Dist PF (B15) – 1 decimal (e.g. 90.5):
-        <input type="text" id="distPF" inputmode="decimal" placeholder="e.g. 90.5">
-      </label>
-
-      <div class="output">
-        <div>PG Conv (B16): <span id="pgConvBottom"></span></div>
-        <div>1st H2O (B17): <span id="firstH2O"></span></div>
-      </div>
-
-      <button id="btnCalcBottom">Calculate 1st Water</button>
-    </section>
-
-    <!-- Variable Proof Calculator -->
-    <section id="panelVariable" class="calculator tab-panel" style="display: none;">
-      <h2>Variable Proof Calculator</h2>
-
-      <label>
-        Weight (starting weight):
-        <input type="text" id="varWeight" inputmode="decimal" placeholder="e.g. 115486.56">
-      </label>
-
-      <label>
-        Current Proof:
-        <input type="text" id="varProofCurrent" inputmode="decimal" placeholder="e.g. 90.520">
-      </label>
-
-      <label>
-        Target Proof:
-        <input type="text" id="varProofTarget" inputmode="decimal" placeholder="e.g. 76.0">
-      </label>
-
-      <div class="output">
-        <div>Current PG Conv: <span id="varPgConvCurrent"></span></div>
-        <div>Target PG Conv: <span id="varPgConvTarget"></span></div>
-        <div>Water to Add: <span id="varH2O"></span></div>
-        <div>New Weight: <span id="varNewWeight"></span></div>
-      </div>
-
-      <button id="btnCalcVariable">Calculate Variable Proof</button>
-    </section>
-
-    <!-- Log -->
-    <section class="log-section">
-      <h2>Calculation Log</h2>
-      <div class="log-controls">
-        <button id="btnViewLog">Refresh Log</button>
-        <button id="btnClearLog">Clear Log</button>
-      </div>
-      <pre id="logOutput" class="log-output">(no entries yet)</pre>
-    </section>
+  <div class="output">
+    <div>PG Conv: <span id="pgConvTop"></span></div>
+    <div>Water to Add: <span id="secondH2O"></span></div>
+    <div>Total 80.0 Proof Weight: <span id="newWeight"></span></div>
   </div>
 
-  <!-- Auth0 SPA SDK MUST load before script.js -->
-  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.13/auth0-spa-js.production.js"></script>
+  <button id="btnCalcTop">Calculate</button>
+</section>
 
-  <!-- App script -->
+<section id="panelBottom" class="calculator tab-panel" style="display: none;">
+  <h2>1st Water Calculation</h2>
+
+  <label>
+    Dist Weight:
+    <input type="text" id="distWeight" inputmode="decimal">
+  </label>
+
+  <label>
+    Dist PF – Requires 1 decimal (e.g. 177.7):
+    <input type="text" id="distPF" placeholder="90.5">
+  </label>
+
+  <div class="output">
+    <div>PG Conv: <span id="pgConvBottom"></span></div>
+    <div>1st H2O: <span id="firstH2O"></span></div>
+  </div>
+
+  <button id="btnCalcBottom">Calculate 1st Water</button>
+</section>
+
+
+
+    <hr>
+
+    <!-- Shared log for both calculators -->
+    <section class="log">
+      <h2>Calculation Log (last 10 entries)</h2>
+      <button id="btnViewLog">Refresh Log</button>
+      <button id="btnClearLog">Clear Log</button>
+      <pre id="logOutput">(no entries yet)</pre>
+    </section>
+  </div> <!-- end #app -->
+
+    <!-- Auth bar -->
+  <div id="auth-bar">
+    <span id="authStatus">Checking login status…</span>
+    <button id="btnLogin" style="display: none;">Log In</button>
+    <button id="btnLogout" style="display: none;">Log Out</button>
+  </div>
+
+  <!-- Auth0 SPA SDK -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
+
+  <!-- Your calculator + Auth0 logic -->
   <script src="script.js"></script>
 
-  <!-- Simple tab logic now lives in script.js -->
+  <!-- Simple tab logic ... (unchanged) -->
 </body>
+
 </html>
