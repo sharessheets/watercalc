@@ -28,6 +28,11 @@ function formatPgConv(value) {
   return n.toFixed(5);
 }
 
+function isValidThreeDecimalProof(str) {
+  // must be digits + "." + exactly 3 digits
+  return /^[0-9]+\\.[0-9]{3}$/.test(str);
+}
+
 function formatSecondH2O(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) {
@@ -268,6 +273,12 @@ async function handleCalcTop() {
   const secondH2OSpan = document.getElementById('secondH2O');
   const newWeightSpan = document.getElementById('newWeight');
 
+  if (!isValidThreeDecimalProof(proofStr)) {
+  alert('Proof must have EXACTLY 3 decimal places (e.g. 80.620).');
+  proofInput.focus();
+  return;
+}
+  
   if (!weightInput || !proofInput || !pgConvSpan || !secondH2OSpan || !newWeightSpan) {
     alert('Top calculator elements not found.');
     return;
@@ -384,6 +395,12 @@ async function handleCalcVariable() {
   const pgConvTargetSpan = document.getElementById('varPgConvTarget');
   const h2OSpan = document.getElementById('varH2O');
   const newWeightSpan = document.getElementById('varNewWeight');
+
+  if (!isValidThreeDecimalProof(proofCurrentStr)) {
+  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
+  proofCurrentInput.focus();
+  return;
+}
 
   if (
     !weightInput ||
@@ -562,6 +579,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
