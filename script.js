@@ -27,11 +27,7 @@ function loadLogFromStorage() {
       return;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      logEntries = parsed;
-    } else {
-      logEntries = [];
-    }
+    logEntries = Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.warn('Failed to load calcLog from localStorage:', err);
     logEntries = [];
