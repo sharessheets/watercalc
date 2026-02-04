@@ -280,17 +280,17 @@ async function handleCalcTop() {
 
   const weightStr = weightInput.value.trim();
   const proofStr = proofInput.value.trim(); // proof must stay as text (e.g. "80.136")
-
-  if (!weightStr || !proofStr) {
-    alert('Please enter both Weight and Proof for the top calculator.');
-    return;
-  }
-
+  
     if (!isValidThreeDecimalProof(proofStr)) {
   alert('Proof must have EXACTLY 3 decimal places (e.g. 80.620).');
   proofInput.focus();
   return;
 }
+
+  if (!weightStr || !proofStr) {
+    alert('Please enter both Weight and Proof for the top calculator.');
+    return;
+  }
   
   const weight = Number(weightStr);
   if (!Number.isFinite(weight)) {
@@ -413,6 +413,12 @@ async function handleCalcVariable() {
   const proofCurrentStr = proofCurrentInput.value.trim();
   const proofTargetStr = proofTargetInput.value.trim();
 
+    if (!isValidThreeDecimalProof(proofCurrentStr)) {
+  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
+  proofCurrentInput.focus();
+  return;
+}
+
   if (!weightStr || !proofCurrentStr || !proofTargetStr) {
     alert('Please enter weight, current proof, and target proof.');
     return;
@@ -424,12 +430,6 @@ async function handleCalcVariable() {
     return;
   }
 
-  if (!isValidThreeDecimalProof(proofCurrentStr)) {
-  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
-  proofCurrentInput.focus();
-  return;
-}
-  
   try {
     const result = await callApi('/calc/variable', {
       weight: weightStr,
@@ -579,6 +579,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
