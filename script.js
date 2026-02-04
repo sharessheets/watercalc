@@ -421,7 +421,7 @@ async function handleCalcVariable() {
   const proofTargetStr = proofTargetInput.value.trim();
 
     if (!isValidThreeDecimalProof(proofCurrentStr)) {
-  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 90.520).');
+  alert('Current Proof must have EXACTLY 3 decimal places (e.g. 177.726).');
   proofCurrentInput.focus();
   return;
 }
@@ -586,6 +586,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
