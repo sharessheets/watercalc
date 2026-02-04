@@ -364,6 +364,49 @@ async function handleCalcBottom() {
 
 // ========== INITIALIZATION ==========
 
+function initTabs() {
+  const btnTabTop = document.getElementById('btnTabTop');
+  const btnTabBottom = document.getElementById('btnTabBottom');
+  const panelTop = document.getElementById('panelTop');
+  const panelBottom = document.getElementById('panelBottom');
+
+  if (!btnTabTop || !btnTabBottom || !panelTop || !panelBottom) {
+    console.warn('Tab elements not found; skipping tab init.');
+    return;
+  }
+
+  function showTop() {
+    // Buttons
+    btnTabTop.classList.add('active');
+    btnTabBottom.classList.remove('active');
+
+    // Panels
+    panelTop.style.display = 'block';
+    panelBottom.style.display = 'none';
+  }
+
+  function showBottom() {
+    btnTabTop.classList.remove('active');
+    btnTabBottom.classList.add('active');
+
+    panelTop.style.display = 'none';
+    panelBottom.style.display = 'block';
+  }
+
+  btnTabTop.addEventListener('click', (e) => {
+    e.preventDefault();
+    showTop();
+  });
+
+  btnTabBottom.addEventListener('click', (e) => {
+    e.preventDefault();
+    showBottom();
+  });
+
+  // Ensure we start on the top tab (matches your HTML)
+  showTop();
+}
+
 function initCalculatorUI() {
   // Load log from localStorage
   loadLogFromStorage();
@@ -414,6 +457,10 @@ function initCalculatorUI() {
       handleLogout();
     });
   }
+
+  // ⬇⬇ ADD THIS
+  initTabs();
+  
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -426,3 +473,4 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
