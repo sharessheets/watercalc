@@ -446,27 +446,21 @@ async function handleCalcVariable() {
 
 function initTabs() {
   const btnTabTop = document.getElementById('btnTabTop');
-  const btnTabBottom = document.getElementById('btnTabBottom');
   const btnTabVariable = document.getElementById('btnTabVariable');
+
   const panelTop = document.getElementById('panelTop');
-  const panelBottom = document.getElementById('panelBottom');
   const panelVariable = document.getElementById('panelVariable');
 
-  if (!btnTabTop || !btnTabBottom || !btnTabVariable ||
-      !panelTop || !panelBottom || !panelVariable) {
+  if (!btnTabTop || !btnTabVariable || !panelTop || !panelVariable) {
     console.warn('Tab elements not found; skipping tab init.');
     return;
   }
 
   function showPanel(name) {
-    // Buttons
     btnTabTop.classList.toggle('active', name === 'top');
-    btnTabBottom.classList.toggle('active', name === 'bottom');
     btnTabVariable.classList.toggle('active', name === 'variable');
 
-    // Panels
     panelTop.style.display = name === 'top' ? 'block' : 'none';
-    panelBottom.style.display = name === 'bottom' ? 'block' : 'none';
     panelVariable.style.display = name === 'variable' ? 'block' : 'none';
   }
 
@@ -475,17 +469,12 @@ function initTabs() {
     showPanel('top');
   });
 
-  btnTabBottom.addEventListener('click', (e) => {
-    e.preventDefault();
-    showPanel('bottom');
-  });
-
   btnTabVariable.addEventListener('click', (e) => {
     e.preventDefault();
     showPanel('variable');
   });
 
-  // Start with the same panel your HTML marks as "active"
+  // Default tab
   showPanel('top');
 }
 
@@ -562,5 +551,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
