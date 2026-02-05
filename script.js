@@ -31,13 +31,36 @@ function formatPgConv(value) {
 function isValidThreeDecimalProof(str) {
   if (typeof str !== 'string') return false;
 
-  // Normalize whitespace and unicode oddities
-  const clean = str
-    .trim()
-    .replace(/\s+/g, '')
-    .normalize('NFKC');
+  const clean = str.trim();
 
+  // EXACT match: digits + "." + exactly 3 digits
   return /^[0-9]+\.[0-9]{3}$/.test(clean);
+}
+
+function markInputError(inputEl, message) {
+  if (!inputEl) return;
+
+  inputEl.classList.add('input-error');
+
+  let msgEl = inputEl.nextElementSibling;
+  if (!msgEl || !msgEl.classList.contains('error-message')) {
+    msgEl = document.createElement('div');
+    msgEl.className = 'error-message';
+    inputEl.insertAdjacentElement('afterend', msgEl);
+  }
+
+  msgEl.textContent = message || '';
+}
+
+function clearInputError(inputEl) {
+  if (!inputEl) return;
+
+  inputEl.classList.remove('input-error');
+
+  const msgEl = inputEl.nextElementSibling;
+  if (msgEl && msgEl.classList.contains('error-message')) {
+    msgEl.textContent = '';
+  }
 }
 
 function formatSecondH2O(value) {
@@ -609,6 +632,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
