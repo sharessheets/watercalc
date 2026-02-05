@@ -14,6 +14,8 @@ const API_BASE_URL = 'https://proof-calc-worker.sharessheets.workers.dev';
 let auth0Client = null;
 let idToken = null; // cached Auth0 access token (JWT)
 
+let currentUserEmail = null;
+
 // ========== LOG STATE ==========
 let logEntries = [];
 // Auth0 user profile (email, name, etc.)
@@ -134,7 +136,15 @@ async function refreshAuthState() {
       console.error('Error getting token silently:', err);
       idToken = null;
     }
-
+    // 🔽 NEW: get user profile + email
+    try {
+      const user = await auth0Client.getUser();
+      currentUserEmail = user && user.email ? user.email : null;
+    } catch (err) {
+      console.error('Error getting user profile:', err);
+      currentUserEmail = null;
+    }
+    
         //Get user profile from Auth0
     try {
       const user = await auth0Client.getUser();
@@ -186,6 +196,12 @@ async function callApi(path, payload) {
   const headers = {
     'Content-Type': 'application/json',
   };
+
+    // 🔽 ensure we always send userEmail when we have it
+  const body = { ...payload };
+  if (currentUserEmail) {
+    body.userEmail = currentUserEmail;
+  }
 
   // Always try to get a fresh token for each call
   if (auth0Client) {
@@ -695,6 +711,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
