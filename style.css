@@ -164,6 +164,18 @@ hr {
   max-width: 900px;
 }
 
+.input-error {
+  border: 2px solid #e53935;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.2);
+}
+
+.error-message {
+  color: #e53935;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
 /* --------- Larger screens (tablet/desktop) --------- */
 @media (min-width: 768px) {
   body {
@@ -204,4 +216,5 @@ hr {
     padding: 10px 16px;
   }
 }
+
 
