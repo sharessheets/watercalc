@@ -16,6 +16,8 @@ let idToken = null; // cached Auth0 access token (JWT)
 
 // ========== LOG STATE ==========
 let logEntries = [];
+// Auth0 user profile (email, name, etc.)
+let currentUser = null;
 
 // ========== FORMAT HELPERS ==========
 
@@ -133,6 +135,15 @@ async function refreshAuthState() {
       idToken = null;
     }
 
+        //Get user profile from Auth0
+    try {
+      const user = await auth0Client.getUser();
+      currentUser = user || null;
+    } catch (err) {
+      console.error('Error getting user profile:', err);
+      currentUser = null;
+    }
+
     if (btnLogin) btnLogin.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'inline-block';
     if (authStatus) authStatus.textContent = 'Logged in';
@@ -244,8 +255,23 @@ function saveLogToStorage() {
 }
 
 function appendLogEntry(entry) {
-  logEntries.unshift(entry);
-  // keep last 10 entries only
+  // Figure out a user label for the log
+  let userLabel = null;
+  if (currentUser) {
+    userLabel =
+      currentUser.email ||
+      currentUser.name ||
+      currentUser.nickname ||
+      currentUser.sub ||
+      null;
+  }
+
+  const enriched = {
+    ...entry,
+    user: entry.user ?? userLabel, // keep explicit user if provided, else use currentUser
+  };
+
+  logEntries.unshift(enriched);
   logEntries = logEntries.slice(0, 10);
   saveLogToStorage();
 }
@@ -261,32 +287,39 @@ function renderLog() {
 
   const lines = logEntries.map((entry, idx) => {
     const ts = entry.timestamp || '';
+    const userLine = entry.user
+      ? `  User:             ${entry.user}`
+      : null;
 
     if (entry.type === 'top') {
-      return [
+      const base = [
         `#${idx + 1} [TOP] ${ts}`,
         `  Weight (B2):      ${entry.weightTop}`,
         `  Proof (B4):       ${entry.proofTop}`,
         `  PG Conv (B5):     ${formatPgConv(entry.pgConv)}`,
         `  2nd H2O (B6):     ${formatSecondH2O(entry.secondH2O)}`,
         `  2nd Weight (B8):  ${formatNewWeight(entry.newWeight)}`,
-        '',
-      ].join('\n');
+      ];
+      if (userLine) base.push(userLine);
+      base.push('');
+      return base.join('\n');
     }
 
     if (entry.type === 'bottom') {
-      return [
+      const base = [
         `#${idx + 1} [BOTTOM] ${ts}`,
         `  Dist Weight (B13): ${entry.distWeight}`,
         `  Dist PF (B15):     ${entry.distPF}`,
         `  PG Conv (B16):     ${formatPgConv(entry.pgConv)}`,
         `  1st H2O (B17):     ${formatSecondH2O(entry.firstH2O)}`,
-        '',
-      ].join('\n');
+      ];
+      if (userLine) base.push(userLine);
+      base.push('');
+      return base.join('\n');
     }
 
     if (entry.type === 'variable') {
-      return [
+      const base = [
         `#${idx + 1} [VARIABLE] ${ts}`,
         `  Weight:            ${entry.weight}`,
         `  Current Proof:     ${entry.proofCurrent}`,
@@ -295,15 +328,21 @@ function renderLog() {
         `  Target PG Conv:    ${formatPgConv(entry.targetPgConv)}`,
         `  Water to Add:      ${formatSecondH2O(entry.secondH2O)}`,
         `  New Weight:        ${formatNewWeight(entry.newWeight)}`,
-        '',
-      ].join('\n');
+      ];
+      if (userLine) base.push(userLine);
+      base.push('');
+      return base.join('\n');
     }
 
-    return `#${idx + 1} [UNKNOWN] ${ts}`;
+    // fallback
+    const base = [`#${idx + 1} [UNKNOWN] ${ts}`];
+    if (userLine) base.push(userLine);
+    return base.join('\n');
   });
 
   pre.textContent = lines.join('\n');
 }
+
 
 function clearLog() {
   // if you want the confirm, keep this; if not, delete the confirm line
@@ -656,6 +695,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
