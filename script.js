@@ -176,7 +176,7 @@ async function callApi(path, payload) {
     'Content-Type': 'application/json',
   };
 
-  // 🔥 Always try to get a fresh token for each call
+  // Always try to get a fresh token for each call
   if (auth0Client) {
     try {
       const token = await auth0Client.getTokenSilently();
@@ -184,13 +184,14 @@ async function callApi(path, payload) {
         headers['Authorization'] = `Bearer ${token}`;
       } else {
         console.warn('No token returned from getTokenSilently');
+        // No token means we should re-auth
+        await handleLogin();
+        throw new Error('Not authenticated');
       }
     } catch (err) {
       console.error('Failed to get token for API call:', err);
-      alert('Your login has expired or is invalid. Please log in again.');
-      // Kick off login flow so the next attempt will work
+      // 🔥 SILENT: no alert, just redirect to login
       await handleLogin();
-      // Stop this call; caller will see an error
       throw new Error('Not authenticated');
     }
   } else {
@@ -386,10 +387,10 @@ async function handleCalcTop() {
 } catch (err) {
   console.error(err);
   if (err.message === 'Not authenticated') {
-    // callApi already started login, so just tell them what’s up
-    alert('Please log in again to run this calculation.');
-  } else {
-    alert(`Top calculation failed: ${err.message}`);
+    // callApi already triggered login redirect; no need to alert
+    return;
+  }
+  alert(`Top calculation failed: ${err.message}`);
   }
 }
 
@@ -553,10 +554,9 @@ async function handleCalcVariable() {
 } catch (err) {
   console.error(err);
   if (err.message === 'Not authenticated') {
-    // callApi already started login, so just tell them what’s up
-    alert('Please log in again to run this calculation.');
-  } else {
-    alert(`Top calculation failed: ${err.message}`);
+    return;
+  }
+  alert(`Variable proof calculation failed: ${err.message}`);
   }
 }
 
@@ -656,6 +656,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
