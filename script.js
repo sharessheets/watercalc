@@ -181,20 +181,19 @@ async function callApi(path, payload) {
 
 // ========== LOG HELPERS ==========
 
+let logEntries = [];
+
 function loadLogFromStorage() {
-  const stored = localStorage.getItem('calcLog');
-  if (!stored) {
-    logEntries = [];
-    return;
-  }
   try {
-    const parsed = JSON.parse(stored);
-    if (Array.isArray(parsed)) {
-      logEntries = parsed;
-    } else {
+    const stored = localStorage.getItem('calcLog');
+    if (!stored) {
       logEntries = [];
+      return;
     }
-  } catch {
+    const parsed = JSON.parse(stored);
+    logEntries = Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Error loading calcLog from localStorage:', err);
     logEntries = [];
   }
 }
@@ -203,13 +202,13 @@ function saveLogToStorage() {
   try {
     localStorage.setItem('calcLog', JSON.stringify(logEntries));
   } catch (err) {
-    console.error('Error saving log to localStorage:', err);
+    console.error('Error saving calcLog to localStorage:', err);
   }
 }
 
 function appendLogEntry(entry) {
   logEntries.unshift(entry);
-  // Keep last 10
+  // keep last 10 entries only
   logEntries = logEntries.slice(0, 10);
   saveLogToStorage();
 }
@@ -263,11 +262,19 @@ function renderLog() {
       ].join('\n');
     }
 
-    // Fallback for any older / unknown entries
     return `#${idx + 1} [UNKNOWN] ${ts}`;
   });
 
   pre.textContent = lines.join('\n');
+}
+
+function clearLog() {
+  // if you want the confirm, keep this; if not, delete the confirm line
+  if (!confirm('Clear calculation log?')) return;
+
+  logEntries = [];
+  saveLogToStorage();
+  renderLog();
 }
 
 // ========== CALCULATOR HANDLERS ==========
@@ -514,47 +521,36 @@ function initTabs() {
 }
 
 function initCalculatorUI() {
-  // Load log from localStorage
+  // Load existing log
   loadLogFromStorage();
   renderLog();
 
-  // Wire up buttons
   const btnCalcTop = document.getElementById('btnCalcTop');
   const btnCalcBottom = document.getElementById('btnCalcBottom');
+  const btnCalcVariable = document.getElementById('btnCalcVariable');
   const btnViewLog = document.getElementById('btnViewLog');
   const btnClearLog = document.getElementById('btnClearLog');
   const btnLogin = document.getElementById('btnLogin');
   const btnLogout = document.getElementById('btnLogout');
-  const btnCalcVariable = document.getElementById('btnCalcVariable');
 
   if (btnCalcTop) {
-    btnCalcTop.addEventListener('click', () => {
-      handleCalcTop();
-    });
+    btnCalcTop.addEventListener('click', handleCalcTop);
   }
 
   if (btnCalcBottom) {
-    btnCalcBottom.addEventListener('click', () => {
-      handleCalcBottom();
-    });
+    btnCalcBottom.addEventListener('click', handleCalcBottom);
   }
 
-if (btnCalcVariable) {
-  btnCalcVariable.addEventListener('click', () => {
-    handleCalcVariable();
-  });
-}
-  
+  if (btnCalcVariable) {
+    btnCalcVariable.addEventListener('click', handleCalcVariable);
+  }
+
   if (btnViewLog) {
-    btnViewLog.addEventListener('click', () => {
-      renderLog();
-    });
+    btnViewLog.addEventListener('click', renderLog);
   }
 
   if (btnClearLog) {
-    btnClearLog.addEventListener('click', () => {
-      clearLog();
-    });
+    btnClearLog.addEventListener('click', clearLog);
   }
 
   if (btnLogin) {
@@ -571,9 +567,7 @@ if (btnCalcVariable) {
     });
   }
 
-  // ⬇⬇ ADD THIS
   initTabs();
-  
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -586,3 +580,4 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
