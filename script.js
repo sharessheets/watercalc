@@ -180,9 +180,6 @@ async function callApi(path, payload) {
 }
 
 // ========== LOG HELPERS ==========
-
-let logEntries = [];
-
 function loadLogFromStorage() {
   try {
     const stored = localStorage.getItem('calcLog');
@@ -580,4 +577,5 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
