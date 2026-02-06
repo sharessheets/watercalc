@@ -139,6 +139,10 @@ async function refreshAuthState() {
     // 🔽 NEW: get user profile + email
     try {
       const user = await auth0Client.getUser();
+      
+      //TEMP LOG
+      console.log("Auth0 user object:", user);
+      
       currentUserEmail = user && user.email ? user.email : null;
     } catch (err) {
       console.error('Error getting user profile:', err);
@@ -711,6 +715,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
