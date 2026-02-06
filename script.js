@@ -228,7 +228,7 @@ async function callApi(path, payload) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload ?? {}),
+    body: JSON.stringify(body),
   });
 
   let data;
@@ -711,6 +711,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
