@@ -46,7 +46,6 @@ function updateTabVisibility() {
 
 let logEntries = [];
 // Auth0 user profile (email, name, etc.)
-let currentUser = null;
 
 // ========== FORMAT HELPERS ==========
 
@@ -755,6 +754,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
