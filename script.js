@@ -14,9 +14,36 @@ const API_BASE_URL = 'https://proof-calc-worker.sharessheets.workers.dev';
 let auth0Client = null;
 let idToken = null; // cached Auth0 access token (JWT)
 
+// Auth0 / user context
+const ROLES_CLAIM = "https://watercalc.sharessheets/roles";
+
+let currentUser = null;
 let currentUserEmail = null;
+let currentUserRoles = [];
+
+function userHasRole(roleName) {
+  return Array.isArray(currentUserRoles) && currentUserRoles.includes(roleName);
+}
+
+function updateTabVisibility() {
+  const btnTabTop = document.getElementById('btnTabTop');
+  const btnTabVariable = document.getElementById('btnTabVariable');
+
+  // 80 PF tab: visible if user has either role
+  const canSeeTop = userHasRole("80pf") || userHasRole("variablePF");
+  if (btnTabTop) {
+    btnTabTop.style.display = canSeeTop ? "inline-block" : "none";
+  }
+
+  // Variable PF tab: variablePF only
+  const canSeeVariable = userHasRole("variablePF");
+  if (btnTabVariable) {
+    btnTabVariable.style.display = canSeeVariable ? "inline-block" : "none";
+  }
+}
 
 // ========== LOG STATE ==========
+
 let logEntries = [];
 // Auth0 user profile (email, name, etc.)
 let currentUser = null;
@@ -130,46 +157,59 @@ async function refreshAuthState() {
   const app = document.getElementById('app');
 
   if (isAuthenticated) {
+    // Get access token
     try {
       idToken = await auth0Client.getTokenSilently();
     } catch (err) {
       console.error('Error getting token silently:', err);
       idToken = null;
     }
-    // 🔽 NEW: get user profile + email
+
+    // Get user + email + roles
     try {
       const user = await auth0Client.getUser();
-      
-      //TEMP LOG
+
+      // Still useful while we’re wiring things up
       console.log("Auth0 user object:", user);
-      
-      currentUserEmail = user && user.email ? user.email : null;
-    } catch (err) {
-      console.error('Error getting user profile:', err);
-      currentUserEmail = null;
-    }
-    
-        //Get user profile from Auth0
-    try {
-      const user = await auth0Client.getUser();
+
       currentUser = user || null;
+      currentUserEmail = user && user.email ? user.email : null;
+
+      const rolesClaim = user && user[ROLES_CLAIM];
+      currentUserRoles = Array.isArray(rolesClaim) ? rolesClaim : [];
+
+      console.log("Current user roles:", currentUserRoles);
     } catch (err) {
       console.error('Error getting user profile:', err);
       currentUser = null;
+      currentUserEmail = null;
+      currentUserRoles = [];
     }
 
     if (btnLogin) btnLogin.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'inline-block';
     if (authStatus) authStatus.textContent = 'Logged in';
     if (app) app.style.display = 'block';
+
+    // 🔽 NEW: update tab visibility based on roles
+    updateTabVisibility();
   } else {
+    // Logged out path
     idToken = null;
+    currentUser = null;
+    currentUserEmail = null;
+    currentUserRoles = [];
+
     if (btnLogin) btnLogin.style.display = 'inline-block';
     if (btnLogout) btnLogout.style.display = 'none';
     if (authStatus) authStatus.textContent = 'Not logged in';
     if (app) app.style.display = 'none';
+
+    // Make sure tabs are hidden appropriately when logged out
+    updateTabVisibility();
   }
 }
+
 
 async function handleLogin() {
   if (!auth0Client) return;
@@ -715,6 +755,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   initCalculatorUI();
   await refreshAuthState();
 });
+
 
 
 
